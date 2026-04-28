@@ -1,0 +1,37 @@
+import { Bell } from 'lucide-react';
+import { formatLongDate } from '../utils/date';
+
+interface TopBarProps {
+  userName?: string;
+}
+
+export default function TopBar({ userName }: TopBarProps) {
+  const initials = (userName ?? '?')
+    .split(' ')
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('');
+
+  return (
+    <header className="border-b border-border bg-bg/80 backdrop-blur sticky top-0 z-10">
+      <div className="flex items-center justify-between px-4 md:px-6 py-3">
+        <div className="text-sm">
+          <div className="text-muted text-xs">Today</div>
+          <div className="font-medium">{formatLongDate()}</div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            aria-label="Notifications"
+            className="size-9 rounded-md bg-surface text-muted hover:text-white border border-border flex items-center justify-center"
+          >
+            <Bell size={16} />
+          </button>
+          <div className="size-9 rounded-full bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center text-xs font-semibold">
+            {initials.toUpperCase() || '?'}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}

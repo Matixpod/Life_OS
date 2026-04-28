@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "lifeos": {
+      "command": "/home/matixpod/GITHUB/Life_OS/backend/.venv/bin/python",
+      "args": ["/home/matixpod/GITHUB/Life_OS/mcp/lifeos_mcp.py"],
+      "env": {}
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest", "--headless"],
+      "env": {}
+    }
+  }
+}
