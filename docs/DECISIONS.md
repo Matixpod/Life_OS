@@ -74,3 +74,27 @@
 - **Status**: Proposed (Module 6)
 - **Decision**: When the AI agent orchestration layer is built, use LangGraph (Python, Anthropic-compatible). Each domain is a specialized node: sleep_agent, workout_agent, cognitive_agent, mental_health_agent, synthesis_agent.
 - **Why over CrewAI**: More fine-grained state control, better error handling, native streaming support, more actively maintained.
+
+---
+
+## ADR-010: daily_tasks instead of separate tasks table
+- **Date**: 2026-04-28
+- **Status**: Accepted
+- **Context**: CHECKLIST specified a new `tasks` table. Existing schema already
+  had `daily_tasks` table with compatible structure (category + status fields).
+- **Decision**: Use `daily_tasks` instead of creating a redundant `tasks` table.
+  KRONOS analyzers query `daily_tasks` directly.
+- **Consequences**: Naming inconsistency between docs (tasks) and code (daily_tasks).
+  All future documentation must use `daily_tasks`.
+
+---
+
+## ADR-011: RLS enabled with auth.uid() policy (Scenario B — multi-user ready)
+- **Date**: 2026-04-29
+- **Status**: Accepted
+- **Context**: Initial migration omitted RLS. Audit identified this as HIGH priority risk.
+- **Decision**: Enable RLS on all 5 KRONOS tables via manual SQL migration in
+  Supabase Dashboard. Policy: `user_id = auth.uid()` FOR ALL on each table.
+- **Consequences**: App is now multi-user ready at DB level. Backend must ensure
+  Supabase client is initialized with user's JWT (not service_role key) for
+  RLS to work correctly on user-facing routes.

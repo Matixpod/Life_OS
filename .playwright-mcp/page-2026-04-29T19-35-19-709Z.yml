@@ -1,0 +1,142 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e8]
+        - generic [ref=e11]: Life OS
+      - button "Toggle sidebar" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+    - navigation [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]: DAILY
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
+          - /url: /
+          - img [ref=e19]
+          - generic [ref=e22]: Dashboard
+        - link "Tasks" [ref=e23] [cursor=pointer]:
+          - /url: /tasks
+          - img [ref=e24]
+          - generic [ref=e27]: Tasks
+        - link "Goals" [ref=e28] [cursor=pointer]:
+          - /url: /goals
+          - img [ref=e29]
+          - generic [ref=e33]: Goals
+        - link "Sleep & Energy" [ref=e34] [cursor=pointer]:
+          - /url: /sleep
+          - img [ref=e35]
+          - generic [ref=e37]: Sleep & Energy
+        - link "Supplements" [ref=e38] [cursor=pointer]:
+          - /url: /supplements
+          - img [ref=e39]
+          - generic [ref=e42]: Supplements
+      - generic [ref=e43]:
+        - generic [ref=e44]: TRACKING
+        - link "Workout" [ref=e45] [cursor=pointer]:
+          - /url: /workout
+          - img [ref=e46]
+          - generic [ref=e52]: Workout
+        - link "Cognitive" [ref=e53] [cursor=pointer]:
+          - /url: /cognitive
+          - img [ref=e54]
+          - generic [ref=e62]: Cognitive
+        - link "Mental Health" [ref=e63] [cursor=pointer]:
+          - /url: /mental-health
+          - img [ref=e64]
+          - generic [ref=e66]: Mental Health
+        - link "Body Metrics" [ref=e67] [cursor=pointer]:
+          - /url: /body
+          - img [ref=e68]
+          - generic [ref=e70]: Body Metrics
+        - link "Nutrition" [ref=e71] [cursor=pointer]:
+          - /url: /nutrition
+          - img [ref=e72]
+          - generic [ref=e75]: Nutrition
+      - generic [ref=e76]:
+        - generic [ref=e77]: INSIGHTS
+        - link "Deep Work" [ref=e78] [cursor=pointer]:
+          - /url: /deep-work
+          - img [ref=e79]
+          - generic [ref=e84]: Deep Work
+        - link "Learning" [ref=e85] [cursor=pointer]:
+          - /url: /learning
+          - img [ref=e86]
+          - generic [ref=e88]: Learning
+        - link "Intelligence" [ref=e89] [cursor=pointer]:
+          - /url: /intelligence
+          - img [ref=e90]
+          - generic [ref=e93]: Intelligence
+        - link "Review" [ref=e94] [cursor=pointer]:
+          - /url: /review
+          - img [ref=e95]
+          - generic [ref=e97]: Review
+        - link "KRONOS" [ref=e98] [cursor=pointer]:
+          - /url: /kronos
+          - img [ref=e99]
+          - generic [ref=e102]: KRONOS
+      - generic [ref=e103]:
+        - generic [ref=e104]: YOU
+        - link "Profile" [ref=e105] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e106]
+          - generic [ref=e109]: Profile
+    - generic [ref=e111]:
+      - img [ref=e112]
+      - generic [ref=e114]:
+        - generic [ref=e115]: "0"
+        - generic [ref=e116]: day streak
+  - generic [ref=e117]:
+    - banner [ref=e118]:
+      - generic [ref=e119]:
+        - generic [ref=e120]:
+          - generic [ref=e121]: Today
+          - generic [ref=e122]: Wednesday, April 29, 2026
+        - generic [ref=e123]:
+          - button "Notifications" [ref=e124] [cursor=pointer]:
+            - img [ref=e125]
+          - generic [ref=e128]: "?"
+    - main [ref=e129]:
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - generic [ref=e132]:
+            - heading "Tasks" [level=1] [ref=e133]
+            - paragraph [ref=e134]: Wszystko przepływa stąd — KRONOS, ARES i ATHENA czytają to co tu wpiszesz.
+          - navigation [ref=e135]:
+            - link "Dziś" [ref=e136] [cursor=pointer]:
+              - /url: /tasks
+            - link "Tydzień" [ref=e137] [cursor=pointer]:
+              - /url: /tasks/week
+            - link "Backlog" [ref=e138] [cursor=pointer]:
+              - /url: /tasks/backlog
+        - generic [ref=e139]:
+          - generic [ref=e140]:
+            - textbox "New task title" [ref=e141]:
+              - /placeholder: Add a task… (press N)
+            - spinbutton "Estimated minutes" [ref=e142]
+            - button "Add" [ref=e143] [cursor=pointer]:
+              - img [ref=e144]
+              - text: Add
+          - generic [ref=e145]:
+            - button "Vitality" [pressed] [ref=e146] [cursor=pointer]:
+              - img [ref=e147]
+              - text: Vitality
+            - button "Intellect" [ref=e149] [cursor=pointer]:
+              - img [ref=e150]
+              - text: Intellect
+            - button "Discipline" [ref=e158] [cursor=pointer]:
+              - img [ref=e159]
+              - text: Discipline
+            - button "Wealth" [ref=e163] [cursor=pointer]:
+              - img [ref=e164]
+              - text: Wealth
+            - button "Charisma" [ref=e169] [cursor=pointer]:
+              - img [ref=e170]
+              - text: Charisma
+            - button "Willpower" [ref=e175] [cursor=pointer]:
+              - img [ref=e176]
+              - text: Willpower
+            - button "L" [ref=e179] [cursor=pointer]
+            - button "M" [pressed] [ref=e180] [cursor=pointer]
+            - button "H" [ref=e181] [cursor=pointer]
+        - generic [ref=e182]:
+          - img [ref=e183]
+          - generic [ref=e186]: Backlog pusty — brawo!

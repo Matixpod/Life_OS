@@ -1,0 +1,220 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e8]
+        - generic [ref=e11]: Life OS
+      - button "Toggle sidebar" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+    - navigation [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]: DAILY
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
+          - /url: /
+          - img [ref=e19]
+          - generic [ref=e22]: Dashboard
+        - link "Goals" [ref=e23] [cursor=pointer]:
+          - /url: /goals
+          - img [ref=e24]
+          - generic [ref=e28]: Goals
+        - link "Sleep & Energy" [ref=e29] [cursor=pointer]:
+          - /url: /sleep
+          - img [ref=e30]
+          - generic [ref=e32]: Sleep & Energy
+        - link "Supplements" [ref=e33] [cursor=pointer]:
+          - /url: /supplements
+          - img [ref=e34]
+          - generic [ref=e37]: Supplements
+      - generic [ref=e38]:
+        - generic [ref=e39]: TRACKING
+        - link "Workout" [ref=e40] [cursor=pointer]:
+          - /url: /workout
+          - img [ref=e41]
+          - generic [ref=e47]: Workout
+        - link "Cognitive" [ref=e48] [cursor=pointer]:
+          - /url: /cognitive
+          - img [ref=e49]
+          - generic [ref=e57]: Cognitive
+        - link "Mental Health" [ref=e58] [cursor=pointer]:
+          - /url: /mental-health
+          - img [ref=e59]
+          - generic [ref=e61]: Mental Health
+        - link "Body Metrics" [ref=e62] [cursor=pointer]:
+          - /url: /body
+          - img [ref=e63]
+          - generic [ref=e65]: Body Metrics
+        - link "Nutrition" [ref=e66] [cursor=pointer]:
+          - /url: /nutrition
+          - img [ref=e67]
+          - generic [ref=e70]: Nutrition
+      - generic [ref=e71]:
+        - generic [ref=e72]: INSIGHTS
+        - link "Deep Work" [ref=e73] [cursor=pointer]:
+          - /url: /deep-work
+          - img [ref=e74]
+          - generic [ref=e79]: Deep Work
+        - link "Learning" [ref=e80] [cursor=pointer]:
+          - /url: /learning
+          - img [ref=e81]
+          - generic [ref=e83]: Learning
+        - link "Intelligence" [ref=e84] [cursor=pointer]:
+          - /url: /intelligence
+          - img [ref=e85]
+          - generic [ref=e88]: Intelligence
+        - link "Review" [ref=e89] [cursor=pointer]:
+          - /url: /review
+          - img [ref=e90]
+          - generic [ref=e92]: Review
+        - link "KRONOS" [ref=e93] [cursor=pointer]:
+          - /url: /kronos
+          - img [ref=e94]
+          - generic [ref=e97]: KRONOS
+      - generic [ref=e98]:
+        - generic [ref=e99]: YOU
+        - link "Profile" [ref=e100] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e101]
+          - generic [ref=e104]: Profile
+    - generic [ref=e106]:
+      - img [ref=e107]
+      - generic [ref=e109]:
+        - generic [ref=e110]: "1"
+        - generic [ref=e111]: day streak
+  - generic [ref=e112]:
+    - banner [ref=e113]:
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e116]: Today
+          - generic [ref=e117]: Tuesday, April 28, 2026
+        - generic [ref=e118]:
+          - button "Notifications" [ref=e119] [cursor=pointer]:
+            - img [ref=e120]
+          - generic [ref=e123]: YN
+    - main [ref=e124]:
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - generic [ref=e281]:
+            - generic [ref=e282]:
+              - img [ref=e283]
+              - generic [ref=e286]:
+                - generic [ref=e287]: "0"
+                - generic [ref=e288]: / 100
+            - generic [ref=e289]: Daily Potential
+          - generic [ref=e128]:
+            - generic [ref=e290]:
+              - img [ref=e292]
+              - generic [ref=e295]:
+                - text: "1"
+                - generic [ref=e296]: "-day streak —"
+                - text: Building momentum.
+              - generic [ref=e297]: blue
+            - paragraph [ref=e130]: Welcome back, Your Name. Snapshot of your day across all 12 modules.
+        - generic [ref=e131]:
+          - button "Completed Goals 4 / 4 P1 2/2" [ref=e298] [cursor=pointer]:
+            - generic [ref=e299]:
+              - img [ref=e301]
+              - generic [ref=e305]: Completed
+            - generic [ref=e307]: Goals
+            - generic [ref=e308]: 4 / 4
+            - generic [ref=e309]: P1 2/2
+          - button "Pending Sleep & Energy — no log" [ref=e310] [cursor=pointer]:
+            - generic [ref=e311]:
+              - img [ref=e313]
+              - generic [ref=e315]: Pending
+            - generic [ref=e317]: Sleep & Energy
+            - generic [ref=e318]: —
+            - generic [ref=e319]: no log
+          - button "Pending Supplements 0 / 6 taken" [ref=e320] [cursor=pointer]:
+            - generic [ref=e321]:
+              - img [ref=e323]
+              - generic [ref=e326]: Pending
+            - generic [ref=e328]: Supplements
+            - generic [ref=e329]: 0 / 6
+            - generic [ref=e330]: taken
+          - button "Pending Workout — no session" [ref=e331] [cursor=pointer]:
+            - generic [ref=e332]:
+              - img [ref=e334]
+              - generic [ref=e340]: Pending
+            - generic [ref=e342]: Workout
+            - generic [ref=e343]: —
+            - generic [ref=e344]: no session
+          - button "Pending Cognitive No challenge" [ref=e345] [cursor=pointer]:
+            - generic [ref=e346]:
+              - img [ref=e348]
+              - generic [ref=e356]: Pending
+            - generic [ref=e358]: Cognitive
+            - generic [ref=e359]: No challenge
+          - button "Pending Mental Health — no log" [ref=e360] [cursor=pointer]:
+            - generic [ref=e361]:
+              - img [ref=e363]
+              - generic [ref=e365]: Pending
+            - generic [ref=e367]: Mental Health
+            - generic [ref=e368]: —
+            - generic [ref=e369]: no log
+          - button "Pending Body — no log" [ref=e370] [cursor=pointer]:
+            - generic [ref=e371]:
+              - img [ref=e373]
+              - generic [ref=e375]: Pending
+            - generic [ref=e377]: Body
+            - generic [ref=e378]: —
+            - generic [ref=e379]: no log
+          - button "Pending Nutrition 0 meals logged" [ref=e380] [cursor=pointer]:
+            - generic [ref=e381]:
+              - img [ref=e383]
+              - generic [ref=e386]: Pending
+            - generic [ref=e388]: Nutrition
+            - generic [ref=e389]: "0"
+            - generic [ref=e390]: meals logged
+          - button "Pending Deep Work 0m today" [ref=e391] [cursor=pointer]:
+            - generic [ref=e392]:
+              - img [ref=e394]
+              - generic [ref=e399]: Pending
+            - generic [ref=e401]: Deep Work
+            - generic [ref=e402]: 0m
+            - generic [ref=e403]: today
+          - button "Pending Learning 0 items" [ref=e404] [cursor=pointer]:
+            - generic [ref=e405]:
+              - img [ref=e407]
+              - generic [ref=e409]: Pending
+            - generic [ref=e411]: Learning
+            - generic [ref=e412]: "0"
+            - generic [ref=e413]: items
+          - button "Completed Intelligence Ready today’s digest" [ref=e414] [cursor=pointer]:
+            - generic [ref=e415]:
+              - img [ref=e417]
+              - generic [ref=e420]: Completed
+            - generic [ref=e422]: Intelligence
+            - generic [ref=e423]: Ready
+            - generic [ref=e424]: today’s digest
+          - button "Completed Review 2026-04-28 last weekly" [ref=e425] [cursor=pointer]:
+            - generic [ref=e426]:
+              - img [ref=e428]
+              - generic [ref=e430]: Completed
+            - generic [ref=e432]: Review
+            - generic [ref=e433]: 2026-04-28
+            - generic [ref=e434]: last weekly
+        - generic [ref=e181]:
+          - generic [ref=e182]: Today's Activity
+          - list [ref=e183]:
+            - listitem [ref=e185]:
+              - generic [ref=e187]:
+                - img [ref=e188]
+                - generic [ref=e190]: 07:12
+                - generic [ref=e191]: Logged 7h 30m sleep
+            - listitem [ref=e192]:
+              - generic [ref=e194]:
+                - img [ref=e195]
+                - generic [ref=e198]: 08:04
+                - generic [ref=e199]: Took morning supplements
+            - listitem [ref=e200]:
+              - generic [ref=e202]:
+                - img [ref=e203]
+                - generic [ref=e211]: 10:32
+                - generic [ref=e212]: Started cognitive challenge
+            - listitem [ref=e213]:
+              - generic [ref=e215]:
+                - img [ref=e216]
+                - generic [ref=e220]: 11:48
+                - generic [ref=e221]: Marked 2 daily goals complete
+        - button "Quick add" [ref=e222] [cursor=pointer]:
+          - img [ref=e223]

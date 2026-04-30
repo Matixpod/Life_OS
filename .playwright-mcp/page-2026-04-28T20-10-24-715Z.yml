@@ -1,0 +1,49 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: Today
+        - generic [ref=e9]: Tuesday, April 28, 2026
+      - generic [ref=e10]:
+        - button "Notifications" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+        - generic [ref=e15]: "?"
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - link "Dashboard" [ref=e18] [cursor=pointer]:
+        - /url: /
+        - img [ref=e19]
+        - text: Dashboard
+      - generic [ref=e21]:
+        - generic [ref=e22]: KRONOS
+        - heading "Discipline & Consistency" [level=1] [ref=e23]
+        - paragraph [ref=e24]:
+          - img [ref=e25]
+          - text: Streaks · patterns · plan vs execution
+  - navigation [ref=e37]:
+    - list [ref=e38]:
+      - listitem [ref=e39]:
+        - link "Home" [ref=e40] [cursor=pointer]:
+          - /url: /
+          - img [ref=e41]
+          - text: Home
+      - listitem [ref=e44]:
+        - link "Sleep" [ref=e45] [cursor=pointer]:
+          - /url: /sleep
+          - img [ref=e46]
+          - text: Sleep
+      - listitem [ref=e48]:
+        - link "Mind" [ref=e49] [cursor=pointer]:
+          - /url: /cognitive
+          - img [ref=e50]
+          - text: Mind
+      - listitem [ref=e58]:
+        - link "News" [ref=e59] [cursor=pointer]:
+          - /url: /intelligence
+          - img [ref=e60]
+          - text: News
+      - listitem [ref=e63]:
+        - link "Review" [ref=e64] [cursor=pointer]:
+          - /url: /review
+          - img [ref=e65]
+          - text: Review

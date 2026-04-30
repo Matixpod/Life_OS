@@ -35,6 +35,15 @@ def api_post(path: str, data: dict) -> dict:
         return {"error": str(e)}
 
 
+def api_put(path: str, data: dict | None = None) -> dict:
+    try:
+        r = httpx.put(f"{BASE_URL}{path}", json=data or {}, timeout=15)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @mcp.tool()
 def get_health() -> dict:
     """Check if the Life OS backend is running."""
@@ -138,6 +147,42 @@ def generate_weekly_review() -> dict:
 def get_streak_info() -> dict:
     """Get current streak count, longest streak, and recent streak history."""
     return api_get("/api/v1/user/streak")
+
+
+# ─── Goals module ────────────────────────────────────────────────────────────
+
+
+@mcp.tool()
+def get_today_goals() -> dict:
+    """Get today's task list with completion status, priorities, and life-area context."""
+    return {"tasks": api_get(f"/api/v1/goals/tasks?date={date.today()}")}
+
+
+@mcp.tool()
+def get_active_projects() -> list:
+    """Get all active projects (with life area nested). Use for planning context."""
+    result = api_get("/api/v1/goals/projects?status=active")
+    return result if isinstance(result, list) else []
+
+
+@mcp.tool()
+def generate_tomorrow_plan() -> dict:
+    """Trigger the agent to generate tomorrow's task plan with justifications and how-to-start tips."""
+    plan_date = str(date.today() + timedelta(days=1))
+    return api_post("/api/v1/goals/plan/generate", {"date": plan_date})
+
+
+@mcp.tool()
+def complete_task(task_id: str) -> dict:
+    """Mark a daily task as completed."""
+    return api_put(f"/api/v1/goals/tasks/{task_id}/complete")
+
+
+@mcp.tool()
+def get_stalled_projects() -> list:
+    """Get projects with no progress in 7+ days. Use for accountability/escalation."""
+    result = api_get("/api/v1/goals/projects/stalled")
+    return result if isinstance(result, list) else []
 
 
 @mcp.resource("lifeos://today")

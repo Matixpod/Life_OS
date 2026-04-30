@@ -7,11 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import (
     cognitive,
     dashboard,
+    goals,
     health,
     intelligence,
+    kronos,
     mental_health,
     review,
     sleep,
+    tasks,
     user,
     workout,
 )
@@ -43,3 +46,6 @@ app.include_router(mental_health.router, prefix="/api/v1")
 app.include_router(cognitive.router, prefix="/api/v1")
 app.include_router(intelligence.router, prefix="/api/v1")
 app.include_router(review.router, prefix="/api/v1")
+app.include_router(goals.router, prefix="/api/v1")
+app.include_router(kronos.router, prefix="/api/v1")
+app.include_router(tasks.router, prefix="/api/v1")

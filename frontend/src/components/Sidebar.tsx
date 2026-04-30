@@ -3,6 +3,7 @@ import {
   Apple,
   BookOpen,
   Brain,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Dumbbell,
@@ -14,6 +15,7 @@ import {
   Moon,
   Newspaper,
   Pill,
+  ShieldCheck,
   Sparkles,
   Target,
   User,
@@ -32,6 +34,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
     title: 'DAILY',
     items: [
       { to: '/', icon: Home, label: 'Dashboard' },
+      { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
       { to: '/goals', icon: Target, label: 'Goals' },
       { to: '/sleep', icon: Moon, label: 'Sleep & Energy' },
       { to: '/supplements', icon: Pill, label: 'Supplements' },
@@ -54,6 +57,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
       { to: '/learning', icon: BookOpen, label: 'Learning' },
       { to: '/intelligence', icon: Newspaper, label: 'Intelligence' },
       { to: '/review', icon: Library, label: 'Review' },
+      { to: '/kronos', icon: ShieldCheck, label: 'KRONOS' },
     ],
   },
   {

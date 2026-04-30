@@ -1,0 +1,347 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e8]
+          - generic [ref=e11]: Life OS
+        - button "Toggle sidebar" [ref=e12] [cursor=pointer]:
+          - img [ref=e13]
+      - navigation [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]: DAILY
+          - link "Dashboard" [ref=e18] [cursor=pointer]:
+            - /url: /
+            - img [ref=e19]
+            - generic [ref=e22]: Dashboard
+          - link "Goals" [ref=e23] [cursor=pointer]:
+            - /url: /goals
+            - img [ref=e24]
+            - generic [ref=e28]: Goals
+          - link "Sleep & Energy" [ref=e29] [cursor=pointer]:
+            - /url: /sleep
+            - img [ref=e30]
+            - generic [ref=e32]: Sleep & Energy
+          - link "Supplements" [ref=e33] [cursor=pointer]:
+            - /url: /supplements
+            - img [ref=e34]
+            - generic [ref=e37]: Supplements
+        - generic [ref=e38]:
+          - generic [ref=e39]: TRACKING
+          - link "Workout" [ref=e40] [cursor=pointer]:
+            - /url: /workout
+            - img [ref=e41]
+            - generic [ref=e47]: Workout
+          - link "Cognitive" [ref=e48] [cursor=pointer]:
+            - /url: /cognitive
+            - img [ref=e49]
+            - generic [ref=e57]: Cognitive
+          - link "Mental Health" [ref=e58] [cursor=pointer]:
+            - /url: /mental-health
+            - img [ref=e59]
+            - generic [ref=e61]: Mental Health
+          - link "Body Metrics" [ref=e62] [cursor=pointer]:
+            - /url: /body
+            - img [ref=e63]
+            - generic [ref=e65]: Body Metrics
+          - link "Nutrition" [ref=e66] [cursor=pointer]:
+            - /url: /nutrition
+            - img [ref=e67]
+            - generic [ref=e70]: Nutrition
+        - generic [ref=e71]:
+          - generic [ref=e72]: INSIGHTS
+          - link "Deep Work" [ref=e73] [cursor=pointer]:
+            - /url: /deep-work
+            - img [ref=e74]
+            - generic [ref=e79]: Deep Work
+          - link "Learning" [ref=e80] [cursor=pointer]:
+            - /url: /learning
+            - img [ref=e81]
+            - generic [ref=e83]: Learning
+          - link "Intelligence" [ref=e84] [cursor=pointer]:
+            - /url: /intelligence
+            - img [ref=e85]
+            - generic [ref=e88]: Intelligence
+          - link "Review" [ref=e89] [cursor=pointer]:
+            - /url: /review
+            - img [ref=e90]
+            - generic [ref=e92]: Review
+          - link "KRONOS" [ref=e93] [cursor=pointer]:
+            - /url: /kronos
+            - img [ref=e94]
+            - generic [ref=e97]: KRONOS
+        - generic [ref=e98]:
+          - generic [ref=e99]: YOU
+          - link "Profile" [ref=e100] [cursor=pointer]:
+            - /url: /profile
+            - img [ref=e101]
+            - generic [ref=e104]: Profile
+      - generic [ref=e106]:
+        - img [ref=e107]
+        - generic [ref=e109]:
+          - generic [ref=e110]: "1"
+          - generic [ref=e111]: day streak
+    - generic [ref=e112]:
+      - banner [ref=e113]:
+        - generic [ref=e114]:
+          - generic [ref=e115]:
+            - generic [ref=e116]: Today
+            - generic [ref=e117]: Tuesday, April 28, 2026
+          - generic [ref=e118]:
+            - button "Notifications" [ref=e119] [cursor=pointer]:
+              - img [ref=e120]
+            - generic [ref=e123]: YN
+      - main [ref=e124]:
+        - generic [ref=e125]:
+          - link "Dashboard" [ref=e126] [cursor=pointer]:
+            - /url: /
+            - img [ref=e127]
+            - text: Dashboard
+          - generic [ref=e129]:
+            - generic [ref=e130]: KRONOS
+            - heading "Discipline & Consistency" [level=1] [ref=e131]
+            - paragraph [ref=e132]:
+              - img [ref=e133]
+              - text: Streaks · patterns · plan vs execution
+          - generic [ref=e136]:
+            - generic [ref=e146]:
+              - generic [ref=e147]: Global consistency
+              - generic [ref=e148]:
+                - generic [ref=e149]: —
+                - generic [ref=e150]: /100
+            - generic [ref=e151]:
+              - generic [ref=e152]: Streaks
+              - generic [ref=e153]:
+                - generic [ref=e154]:
+                  - generic [ref=e155]:
+                    - generic [ref=e156]:
+                      - img [ref=e158]
+                      - generic [ref=e160]: Vitality
+                    - generic [ref=e161]: stable
+                  - generic [ref=e162]:
+                    - img [ref=e163]
+                    - generic [ref=e165]: "0"
+                    - generic [ref=e166]: days
+                  - generic [ref=e167]:
+                    - text: Best
+                    - generic [ref=e168]: 0d
+                - generic [ref=e169]:
+                  - generic [ref=e170]:
+                    - generic [ref=e171]:
+                      - img [ref=e173]
+                      - generic [ref=e181]: Intellect
+                    - generic [ref=e182]: stable
+                  - generic [ref=e183]:
+                    - img [ref=e184]
+                    - generic [ref=e186]: "0"
+                    - generic [ref=e187]: days
+                  - generic [ref=e188]:
+                    - text: Best
+                    - generic [ref=e189]: 0d
+                - generic [ref=e190]:
+                  - generic [ref=e191]:
+                    - generic [ref=e192]:
+                      - img [ref=e194]
+                      - generic [ref=e198]: Discipline
+                    - generic [ref=e199]: stable
+                  - generic [ref=e200]:
+                    - img [ref=e201]
+                    - generic [ref=e203]: "0"
+                    - generic [ref=e204]: days
+                  - generic [ref=e205]:
+                    - text: Best
+                    - generic [ref=e206]: 0d
+                - generic [ref=e207]:
+                  - generic [ref=e208]:
+                    - generic [ref=e209]:
+                      - img [ref=e211]
+                      - generic [ref=e216]: Wealth
+                    - generic [ref=e217]: stable
+                  - generic [ref=e218]:
+                    - img [ref=e219]
+                    - generic [ref=e221]: "0"
+                    - generic [ref=e222]: days
+                  - generic [ref=e223]:
+                    - text: Best
+                    - generic [ref=e224]: 0d
+                - generic [ref=e225]:
+                  - generic [ref=e226]:
+                    - generic [ref=e227]:
+                      - img [ref=e229]
+                      - generic [ref=e234]: Charisma
+                    - generic [ref=e235]: stable
+                  - generic [ref=e236]:
+                    - img [ref=e237]
+                    - generic [ref=e239]: "0"
+                    - generic [ref=e240]: days
+                  - generic [ref=e241]:
+                    - text: Best
+                    - generic [ref=e242]: 0d
+                - generic [ref=e243]:
+                  - generic [ref=e244]:
+                    - generic [ref=e245]:
+                      - img [ref=e247]
+                      - generic [ref=e249]: Willpower
+                    - generic [ref=e250]: stable
+                  - generic [ref=e251]:
+                    - img [ref=e252]
+                    - generic [ref=e254]: "0"
+                    - generic [ref=e255]: days
+                  - generic [ref=e256]:
+                    - text: Best
+                    - generic [ref=e257]: 0d
+            - generic [ref=e258]:
+              - generic [ref=e259]:
+                - generic [ref=e260]: Plan vs execution
+                - heading "Last 4 weeks (% executed)" [level=3] [ref=e261]
+                - application [ref=e265]:
+                  - generic [ref=e270]:
+                    - generic [ref=e271]:
+                      - generic [ref=e273]: 3w ago
+                      - generic [ref=e275]: 2w ago
+                      - generic [ref=e277]: 1w ago
+                      - generic [ref=e279]: This wk
+                    - generic [ref=e280]:
+                      - generic [ref=e282]: 0%
+                      - generic [ref=e284]: 25%
+                      - generic [ref=e286]: 50%
+                      - generic [ref=e288]: 75%
+                      - generic [ref=e290]: 100%
+              - generic [ref=e291]:
+                - generic [ref=e292]:
+                  - generic [ref=e293]:
+                    - generic [ref=e294]: Patterns
+                    - heading "Completion rate by day-of-week" [level=3] [ref=e295]
+                  - generic [ref=e296]:
+                    - generic [ref=e297]: <30%
+                    - generic [ref=e299]: 30–70%
+                    - generic [ref=e301]: ">70%"
+                - table [ref=e304]:
+                  - rowgroup [ref=e305]:
+                    - row "Mo Tu We Th Fr Sa Su" [ref=e306]:
+                      - columnheader [ref=e307]
+                      - columnheader "Mo" [ref=e308]
+                      - columnheader "Tu" [ref=e309]
+                      - columnheader "We" [ref=e310]
+                      - columnheader "Th" [ref=e311]
+                      - columnheader "Fr" [ref=e312]
+                      - columnheader "Sa" [ref=e313]
+                      - columnheader "Su" [ref=e314]
+                  - rowgroup [ref=e315]:
+                    - 'row "Vitality Vitality · Mo: — Vitality · Tu: — Vitality · We: — Vitality · Th: — Vitality · Fr: — Vitality · Sa: — Vitality · Su: —" [ref=e316]':
+                      - cell "Vitality" [ref=e317]:
+                        - generic [ref=e320]: Vitality
+                      - 'cell "Vitality · Mo: —" [ref=e321]':
+                        - 'generic "Vitality · Mo: —" [ref=e322]'
+                      - 'cell "Vitality · Tu: —" [ref=e323]':
+                        - 'generic "Vitality · Tu: —" [ref=e324]'
+                      - 'cell "Vitality · We: —" [ref=e325]':
+                        - 'generic "Vitality · We: —" [ref=e326]'
+                      - 'cell "Vitality · Th: —" [ref=e327]':
+                        - 'generic "Vitality · Th: —" [ref=e328]'
+                      - 'cell "Vitality · Fr: —" [ref=e329]':
+                        - 'generic "Vitality · Fr: —" [ref=e330]'
+                      - 'cell "Vitality · Sa: —" [ref=e331]':
+                        - 'generic "Vitality · Sa: —" [ref=e332]'
+                      - 'cell "Vitality · Su: —" [ref=e333]':
+                        - 'generic "Vitality · Su: —" [ref=e334]'
+                    - 'row "Intellect Intellect · Mo: — Intellect · Tu: — Intellect · We: — Intellect · Th: — Intellect · Fr: — Intellect · Sa: — Intellect · Su: —" [ref=e335]':
+                      - cell "Intellect" [ref=e336]:
+                        - generic [ref=e339]: Intellect
+                      - 'cell "Intellect · Mo: —" [ref=e340]':
+                        - 'generic "Intellect · Mo: —" [ref=e341]'
+                      - 'cell "Intellect · Tu: —" [ref=e342]':
+                        - 'generic "Intellect · Tu: —" [ref=e343]'
+                      - 'cell "Intellect · We: —" [ref=e344]':
+                        - 'generic "Intellect · We: —" [ref=e345]'
+                      - 'cell "Intellect · Th: —" [ref=e346]':
+                        - 'generic "Intellect · Th: —" [ref=e347]'
+                      - 'cell "Intellect · Fr: —" [ref=e348]':
+                        - 'generic "Intellect · Fr: —" [ref=e349]'
+                      - 'cell "Intellect · Sa: —" [ref=e350]':
+                        - 'generic "Intellect · Sa: —" [ref=e351]'
+                      - 'cell "Intellect · Su: —" [ref=e352]':
+                        - 'generic "Intellect · Su: —" [ref=e353]'
+                    - 'row "Discipline Discipline · Mo: — Discipline · Tu: — Discipline · We: — Discipline · Th: — Discipline · Fr: — Discipline · Sa: — Discipline · Su: —" [ref=e354]':
+                      - cell "Discipline" [ref=e355]:
+                        - generic [ref=e358]: Discipline
+                      - 'cell "Discipline · Mo: —" [ref=e359]':
+                        - 'generic "Discipline · Mo: —" [ref=e360]'
+                      - 'cell "Discipline · Tu: —" [ref=e361]':
+                        - 'generic "Discipline · Tu: —" [ref=e362]'
+                      - 'cell "Discipline · We: —" [ref=e363]':
+                        - 'generic "Discipline · We: —" [ref=e364]'
+                      - 'cell "Discipline · Th: —" [ref=e365]':
+                        - 'generic "Discipline · Th: —" [ref=e366]'
+                      - 'cell "Discipline · Fr: —" [ref=e367]':
+                        - 'generic "Discipline · Fr: —" [ref=e368]'
+                      - 'cell "Discipline · Sa: —" [ref=e369]':
+                        - 'generic "Discipline · Sa: —" [ref=e370]'
+                      - 'cell "Discipline · Su: —" [ref=e371]':
+                        - 'generic "Discipline · Su: —" [ref=e372]'
+                    - 'row "Wealth Wealth · Mo: — Wealth · Tu: — Wealth · We: — Wealth · Th: — Wealth · Fr: — Wealth · Sa: — Wealth · Su: —" [ref=e373]':
+                      - cell "Wealth" [ref=e374]:
+                        - generic [ref=e377]: Wealth
+                      - 'cell "Wealth · Mo: —" [ref=e378]':
+                        - 'generic "Wealth · Mo: —" [ref=e379]'
+                      - 'cell "Wealth · Tu: —" [ref=e380]':
+                        - 'generic "Wealth · Tu: —" [ref=e381]'
+                      - 'cell "Wealth · We: —" [ref=e382]':
+                        - 'generic "Wealth · We: —" [ref=e383]'
+                      - 'cell "Wealth · Th: —" [ref=e384]':
+                        - 'generic "Wealth · Th: —" [ref=e385]'
+                      - 'cell "Wealth · Fr: —" [ref=e386]':
+                        - 'generic "Wealth · Fr: —" [ref=e387]'
+                      - 'cell "Wealth · Sa: —" [ref=e388]':
+                        - 'generic "Wealth · Sa: —" [ref=e389]'
+                      - 'cell "Wealth · Su: —" [ref=e390]':
+                        - 'generic "Wealth · Su: —" [ref=e391]'
+                    - 'row "Charisma Charisma · Mo: — Charisma · Tu: — Charisma · We: — Charisma · Th: — Charisma · Fr: — Charisma · Sa: — Charisma · Su: —" [ref=e392]':
+                      - cell "Charisma" [ref=e393]:
+                        - generic [ref=e396]: Charisma
+                      - 'cell "Charisma · Mo: —" [ref=e397]':
+                        - 'generic "Charisma · Mo: —" [ref=e398]'
+                      - 'cell "Charisma · Tu: —" [ref=e399]':
+                        - 'generic "Charisma · Tu: —" [ref=e400]'
+                      - 'cell "Charisma · We: —" [ref=e401]':
+                        - 'generic "Charisma · We: —" [ref=e402]'
+                      - 'cell "Charisma · Th: —" [ref=e403]':
+                        - 'generic "Charisma · Th: —" [ref=e404]'
+                      - 'cell "Charisma · Fr: —" [ref=e405]':
+                        - 'generic "Charisma · Fr: —" [ref=e406]'
+                      - 'cell "Charisma · Sa: —" [ref=e407]':
+                        - 'generic "Charisma · Sa: —" [ref=e408]'
+                      - 'cell "Charisma · Su: —" [ref=e409]':
+                        - 'generic "Charisma · Su: —" [ref=e410]'
+                    - 'row "Willpower Willpower · Mo: — Willpower · Tu: — Willpower · We: — Willpower · Th: — Willpower · Fr: — Willpower · Sa: — Willpower · Su: —" [ref=e411]':
+                      - cell "Willpower" [ref=e412]:
+                        - generic [ref=e415]: Willpower
+                      - 'cell "Willpower · Mo: —" [ref=e416]':
+                        - 'generic "Willpower · Mo: —" [ref=e417]'
+                      - 'cell "Willpower · Tu: —" [ref=e418]':
+                        - 'generic "Willpower · Tu: —" [ref=e419]'
+                      - 'cell "Willpower · We: —" [ref=e420]':
+                        - 'generic "Willpower · We: —" [ref=e421]'
+                      - 'cell "Willpower · Th: —" [ref=e422]':
+                        - 'generic "Willpower · Th: —" [ref=e423]'
+                      - 'cell "Willpower · Fr: —" [ref=e424]':
+                        - 'generic "Willpower · Fr: —" [ref=e425]'
+                      - 'cell "Willpower · Sa: —" [ref=e426]':
+                        - 'generic "Willpower · Sa: —" [ref=e427]'
+                      - 'cell "Willpower · Su: —" [ref=e428]':
+                        - 'generic "Willpower · Su: —" [ref=e429]'
+            - generic [ref=e430]:
+              - generic [ref=e431]:
+                - generic [ref=e432]:
+                  - generic [ref=e433]: KRONOS analysis
+                  - heading "Discipline report" [level=3] [ref=e434]
+                - button "Generate analysis" [ref=e436] [cursor=pointer]:
+                  - img [ref=e444]
+                  - text: Generate analysis
+              - generic [ref=e440]:
+                - generic [ref=e447]: POST /kronos/analysis → 400
+                - paragraph [ref=e448]:
+                  - text: No analysis yet. KRONOS reads your last 90 days of behavior and writes a discipline report. Click
+                  - strong [ref=e449]: Generate analysis
+                  - text: .
+  - generic [ref=e443]: "0"

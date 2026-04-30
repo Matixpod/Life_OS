@@ -1,0 +1,65 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]: Today
+        - generic [ref=e9]: Tuesday, April 28, 2026
+      - generic [ref=e10]:
+        - button "Notifications" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+        - generic [ref=e15]: "?"
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - paragraph [ref=e22]: Welcome. Snapshot of your day across all 12 modules.
+      - generic [ref=e73]:
+        - generic [ref=e74]: Today's Activity
+        - list [ref=e75]:
+          - listitem [ref=e77]:
+            - generic [ref=e79]:
+              - img [ref=e80]
+              - generic [ref=e82]: 07:12
+              - generic [ref=e83]: Logged 7h 30m sleep
+          - listitem [ref=e84]:
+            - generic [ref=e86]:
+              - img [ref=e87]
+              - generic [ref=e90]: 08:04
+              - generic [ref=e91]: Took morning supplements
+          - listitem [ref=e92]:
+            - generic [ref=e94]:
+              - img [ref=e95]
+              - generic [ref=e103]: 10:32
+              - generic [ref=e104]: Started cognitive challenge
+          - listitem [ref=e105]:
+            - generic [ref=e107]:
+              - img [ref=e108]
+              - generic [ref=e112]: 11:48
+              - generic [ref=e113]: Marked 2 daily goals complete
+      - button "Quick add" [ref=e114] [cursor=pointer]:
+        - img [ref=e115]
+  - navigation [ref=e116]:
+    - list [ref=e117]:
+      - listitem [ref=e118]:
+        - link "Home" [ref=e119] [cursor=pointer]:
+          - /url: /
+          - img [ref=e120]
+          - text: Home
+      - listitem [ref=e123]:
+        - link "Sleep" [ref=e124] [cursor=pointer]:
+          - /url: /sleep
+          - img [ref=e125]
+          - text: Sleep
+      - listitem [ref=e127]:
+        - link "Mind" [ref=e128] [cursor=pointer]:
+          - /url: /cognitive
+          - img [ref=e129]
+          - text: Mind
+      - listitem [ref=e137]:
+        - link "News" [ref=e138] [cursor=pointer]:
+          - /url: /intelligence
+          - img [ref=e139]
+          - text: News
+      - listitem [ref=e142]:
+        - link "Review" [ref=e143] [cursor=pointer]:
+          - /url: /review
+          - img [ref=e144]
+          - text: Review

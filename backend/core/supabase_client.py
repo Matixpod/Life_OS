@@ -12,6 +12,18 @@ def get_supabase() -> Client:
     return _client
 
 
+def get_fresh_supabase() -> Client:
+    """A non-cached Supabase client.
+
+    Use inside FastAPI BackgroundTasks (sync functions executed in a
+    threadpool) — the singleton client's HTTP/2 connection is not safe
+    to share with the request that's still in flight. A fresh client
+    avoids "RemoteProtocolError: Server disconnected" races without
+    polluting the singleton's connection pool.
+    """
+    return create_client(settings.supabase_url, settings.supabase_key)
+
+
 def get_user_id(supabase: Client) -> str:
     """Single-user system: return the only user's UUID."""
     result = supabase.table("users").select("id").limit(1).execute()

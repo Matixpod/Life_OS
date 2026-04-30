@@ -16,3 +16,17 @@ body {
 ::-webkit-scrollbar-track { background: #0A0A0F; }
 ::-webkit-scrollbar-thumb { background: #262636; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #3a3a4c; }
+
+@keyframes xp-float {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.9); }
+  15%  { opacity: 1; transform: translate(-50%, -8px) scale(1.05); }
+  100% { opacity: 0; transform: translate(-50%, -48px) scale(1); }
+}
+.animate-xp-float { animation: xp-float 1.5s ease-out forwards; }
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-6px); }
+  40%,80% { transform: translateX(6px); }
+}
+.animate-shake { animation: shake 0.4s ease-in-out; }

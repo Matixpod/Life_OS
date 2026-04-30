@@ -1,0 +1,97 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e8]
+        - generic [ref=e11]: Life OS
+      - button "Toggle sidebar" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+    - navigation [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]: DAILY
+        - link "Dashboard" [ref=e18] [cursor=pointer]:
+          - /url: /
+          - img [ref=e19]
+          - generic [ref=e22]: Dashboard
+        - link "Goals" [ref=e23] [cursor=pointer]:
+          - /url: /goals
+          - img [ref=e24]
+          - generic [ref=e28]: Goals
+        - link "Sleep & Energy" [ref=e29] [cursor=pointer]:
+          - /url: /sleep
+          - img [ref=e30]
+          - generic [ref=e32]: Sleep & Energy
+        - link "Supplements" [ref=e33] [cursor=pointer]:
+          - /url: /supplements
+          - img [ref=e34]
+          - generic [ref=e37]: Supplements
+      - generic [ref=e38]:
+        - generic [ref=e39]: TRACKING
+        - link "Workout" [ref=e40] [cursor=pointer]:
+          - /url: /workout
+          - img [ref=e41]
+          - generic [ref=e47]: Workout
+        - link "Cognitive" [ref=e48] [cursor=pointer]:
+          - /url: /cognitive
+          - img [ref=e49]
+          - generic [ref=e57]: Cognitive
+        - link "Mental Health" [ref=e58] [cursor=pointer]:
+          - /url: /mental-health
+          - img [ref=e59]
+          - generic [ref=e61]: Mental Health
+        - link "Body Metrics" [ref=e62] [cursor=pointer]:
+          - /url: /body
+          - img [ref=e63]
+          - generic [ref=e65]: Body Metrics
+        - link "Nutrition" [ref=e66] [cursor=pointer]:
+          - /url: /nutrition
+          - img [ref=e67]
+          - generic [ref=e70]: Nutrition
+      - generic [ref=e71]:
+        - generic [ref=e72]: INSIGHTS
+        - link "Deep Work" [ref=e73] [cursor=pointer]:
+          - /url: /deep-work
+          - img [ref=e74]
+          - generic [ref=e79]: Deep Work
+        - link "Learning" [ref=e80] [cursor=pointer]:
+          - /url: /learning
+          - img [ref=e81]
+          - generic [ref=e83]: Learning
+        - link "Intelligence" [ref=e84] [cursor=pointer]:
+          - /url: /intelligence
+          - img [ref=e85]
+          - generic [ref=e88]: Intelligence
+        - link "Review" [ref=e89] [cursor=pointer]:
+          - /url: /review
+          - img [ref=e90]
+          - generic [ref=e92]: Review
+        - link "KRONOS" [ref=e93] [cursor=pointer]:
+          - /url: /kronos
+          - img [ref=e94]
+          - generic [ref=e97]: KRONOS
+      - generic [ref=e98]:
+        - generic [ref=e99]: YOU
+        - link "Profile" [ref=e100] [cursor=pointer]:
+          - /url: /profile
+          - img [ref=e101]
+          - generic [ref=e104]: Profile
+    - generic [ref=e106]:
+      - img [ref=e107]
+      - generic [ref=e109]:
+        - generic [ref=e110]: "0"
+        - generic [ref=e111]: day streak
+  - generic [ref=e112]:
+    - banner [ref=e113]:
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e116]: Today
+          - generic [ref=e117]: Tuesday, April 28, 2026
+        - generic [ref=e118]:
+          - button "Notifications" [ref=e119] [cursor=pointer]:
+            - img [ref=e120]
+          - generic [ref=e123]: "?"
+    - main [ref=e124]:
+      - link "Dashboard" [ref=e126] [cursor=pointer]:
+        - /url: /
+        - img [ref=e127]
+        - text: Dashboard
