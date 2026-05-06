@@ -12,12 +12,11 @@ const DAYS: { key: string; label: string }[] = [
 ];
 
 const CATEGORIES: TaskCategory[] = [
-  'vitality',
-  'intellect',
-  'discipline',
-  'wealth',
-  'charisma',
-  'willpower',
+  'health',
+  'knowledge',
+  'other',
+  'work',
+  'relationships',
 ];
 
 function cellColor(rate: number | undefined): string {

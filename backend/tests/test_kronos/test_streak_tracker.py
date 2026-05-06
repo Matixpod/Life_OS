@@ -42,10 +42,10 @@ def test_no_tasks_returns_empty_streaks(fake_supabase):
 def test_seven_day_streak_today_is_active(fake_supabase):
     today = date(2026, 4, 29)
     days = [today - timedelta(days=i) for i in range(7)]
-    _seed_done_tasks(fake_supabase, TaskCategory.VITALITY, days)
+    _seed_done_tasks(fake_supabase, TaskCategory.HEALTH, days)
 
     streaks = calculate_streaks(fake_supabase, today=today)
-    vit = _streak_for(streaks, TaskCategory.VITALITY)
+    vit = _streak_for(streaks, TaskCategory.HEALTH)
 
     assert vit.current_streak == 7
     assert vit.longest_streak >= 7
@@ -57,10 +57,10 @@ def test_streak_broken_yesterday(fake_supabase):
     today = date(2026, 4, 29)
     # 5 days of done tasks ending two days ago — yesterday and today both empty.
     days = [today - timedelta(days=i) for i in range(2, 7)]
-    _seed_done_tasks(fake_supabase, TaskCategory.INTELLECT, days)
+    _seed_done_tasks(fake_supabase, TaskCategory.KNOWLEDGE, days)
 
     streaks = calculate_streaks(fake_supabase, today=today)
-    intl = _streak_for(streaks, TaskCategory.INTELLECT)
+    intl = _streak_for(streaks, TaskCategory.KNOWLEDGE)
 
     assert intl.current_streak == 0
     assert intl.longest_streak == 5
@@ -70,10 +70,10 @@ def test_streak_broken_three_weeks_ago(fake_supabase):
     today = date(2026, 4, 29)
     # 10 consecutive done days that ended 21 days ago.
     days = [today - timedelta(days=21 + i) for i in range(10)]
-    _seed_done_tasks(fake_supabase, TaskCategory.DISCIPLINE, days)
+    _seed_done_tasks(fake_supabase, TaskCategory.OTHER, days)
 
     streaks = calculate_streaks(fake_supabase, today=today)
-    disc = _streak_for(streaks, TaskCategory.DISCIPLINE)
+    disc = _streak_for(streaks, TaskCategory.OTHER)
 
     assert disc.current_streak == 0
     assert disc.longest_streak == 10

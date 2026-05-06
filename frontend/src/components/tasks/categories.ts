@@ -1,30 +1,27 @@
-import { Brain, Coins, Heart, Target, Users, Zap } from 'lucide-react';
+import { Brain, Briefcase, Heart, Target, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { TaskCategory, TaskPriority } from '../../types';
 
 /**
- * Shared metadata for the 6 RPG categories. Identical color/icon mapping
- * to `kronos/StreakCard.tsx` — kept in sync by living in one place.
+ * Shared metadata for the categories.
  */
 export const CATEGORY_META: Record<
   TaskCategory,
   { label: string; icon: LucideIcon; color: string }
 > = {
-  vitality: { label: 'Vitality', icon: Heart, color: '#10b981' },
-  intellect: { label: 'Intellect', icon: Brain, color: '#3b82f6' },
-  discipline: { label: 'Discipline', icon: Target, color: '#f59e0b' },
-  wealth: { label: 'Wealth', icon: Coins, color: '#eab308' },
-  charisma: { label: 'Charisma', icon: Users, color: '#ec4899' },
-  willpower: { label: 'Willpower', icon: Zap, color: '#a855f7' },
+  health: { label: 'Zdrowie & fizyczność', icon: Heart, color: '#10b981' },
+  work: { label: 'Praca & finanse', icon: Briefcase, color: '#f59e0b' },
+  knowledge: { label: 'Wiedza & rozwój', icon: Brain, color: '#3b82f6' },
+  relationships: { label: 'Relacje & społeczność', icon: Users, color: '#f97316' },
+  other: { label: 'Inne', icon: Target, color: '#64748b' },
 };
 
 export const CATEGORIES: TaskCategory[] = [
-  'vitality',
-  'intellect',
-  'discipline',
-  'wealth',
-  'charisma',
-  'willpower',
+  'health',
+  'work',
+  'knowledge',
+  'relationships',
+  'other',
 ];
 
 /** Priority left-border colors per PROMPT spec. */

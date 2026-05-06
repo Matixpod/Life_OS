@@ -1,14 +1,13 @@
-import { Brain, Coins, Flame, Heart, Target, TrendingDown, TrendingUp, Users, Zap } from 'lucide-react';
+import { Brain, Coins, Flame, Heart, Target, TrendingDown, TrendingUp, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { StreakData, TaskCategory, TrendDirection } from '../../types';
 
 const CATEGORY_META: Record<TaskCategory, { label: string; icon: LucideIcon; color: string }> = {
-  vitality: { label: 'Vitality', icon: Heart, color: '#10b981' },
-  intellect: { label: 'Intellect', icon: Brain, color: '#3b82f6' },
-  discipline: { label: 'Discipline', icon: Target, color: '#f59e0b' },
-  wealth: { label: 'Wealth', icon: Coins, color: '#eab308' },
-  charisma: { label: 'Charisma', icon: Users, color: '#ec4899' },
-  willpower: { label: 'Willpower', icon: Zap, color: '#a855f7' },
+  health: { label: 'Zdrowie', icon: Heart, color: '#10b981' },
+  knowledge: { label: 'Wiedza', icon: Brain, color: '#3b82f6' },
+  other: { label: 'Inne', icon: Target, color: '#64748b' },
+  work: { label: 'Praca', icon: Coins, color: '#f59e0b' },
+  relationships: { label: 'Relacje', icon: Users, color: '#f97316' },
 };
 
 function TrendBadge({ trend }: { trend: TrendDirection }) {

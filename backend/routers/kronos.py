@@ -150,6 +150,7 @@ async def post_analysis(
                 ctx,
                 analysis_type=payload.analysis_type,
                 focus_category=payload.focus_category,
+                supabase=supabase,
             ):
                 chunks.append(chunk)
                 yield _sse({"chunk": chunk})

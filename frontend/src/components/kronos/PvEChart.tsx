@@ -81,7 +81,7 @@ export default function PvEChart({ scores }: Props) {
                 borderRadius: 8,
                 fontSize: 12,
               }}
-              formatter={(v: number) => [`${v.toFixed(1)}%`, 'Executed']}
+              formatter={(v) => [`${Number(v ?? 0).toFixed(1)}%`, 'Executed']}
             />
             <Bar dataKey="ratio" fill="#f59e0b" radius={[4, 4, 0, 0]} />
           </BarChart>

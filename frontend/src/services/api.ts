@@ -196,5 +196,7 @@ export const api = {
   deleteTaskV2: (id: string) => deleteVoid(`/api/v1/tasks/${id}`),
   completeTaskV2: (id: string) =>
     postJson<TaskCompletionResult>(`/api/v1/tasks/${id}/complete`, {}),
+  uncompleteTaskV2: (id: string) =>
+    postJson<Task>(`/api/v1/tasks/${id}/uncomplete`, {}),
   skipTaskV2: (id: string) => postJson<Task>(`/api/v1/tasks/${id}/skip`, {}),
 };

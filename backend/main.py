@@ -5,13 +5,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import (
+    ai_settings,
+    ares,
+    calendar,
     cognitive,
+    daily_system,
     dashboard,
     goals,
+    habits,
     health,
     intelligence,
     kronos,
     mental_health,
+    projects_v2,
+    proposals,
     review,
     sleep,
     tasks,
@@ -49,3 +56,10 @@ app.include_router(review.router, prefix="/api/v1")
 app.include_router(goals.router, prefix="/api/v1")
 app.include_router(kronos.router, prefix="/api/v1")
 app.include_router(tasks.router, prefix="/api/v1")
+app.include_router(ai_settings.router, prefix="/api/v1")
+app.include_router(ares.router, prefix="/api/v1")
+app.include_router(habits.router, prefix="/api/v1")
+app.include_router(projects_v2.router, prefix="/api/v1")
+app.include_router(proposals.router, prefix="/api/v1")
+app.include_router(calendar.router, prefix="/api/v1")
+app.include_router(daily_system.router, prefix="/api/v1")

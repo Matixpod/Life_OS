@@ -11,12 +11,11 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class TaskCategory(StrEnum):
-    VITALITY = "vitality"
-    INTELLECT = "intellect"
-    DISCIPLINE = "discipline"
-    WEALTH = "wealth"
-    CHARISMA = "charisma"
-    WILLPOWER = "willpower"
+    HEALTH = "health"
+    WORK = "work"
+    KNOWLEDGE = "knowledge"
+    RELATIONSHIPS = "relationships"
+    OTHER = "other"
 
 
 class TaskStatus(StrEnum):

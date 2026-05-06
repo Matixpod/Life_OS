@@ -34,5 +34,6 @@ export const tasksApi = {
     api.updateTaskV2(id, payload),
   deleteTask: (id: string): Promise<void> => api.deleteTaskV2(id),
   completeTask: (id: string): Promise<TaskCompletionResult> => api.completeTaskV2(id),
+  uncompleteTask: (id: string): Promise<Task> => api.uncompleteTaskV2(id),
   skipTask: (id: string): Promise<Task> => api.skipTaskV2(id),
 };

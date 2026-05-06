@@ -88,6 +88,12 @@ def _row_to_task(row: dict) -> Task:
         estimated_minutes=row.get("estimated_minutes"),
         notes=row.get("notes"),
         created_at=row["created_at"],
+        task_type=row.get("task_type") or "task",
+        habit_id=row.get("habit_id"),
+        project_task_id=row.get("project_task_id"),
+        is_main_quest=bool(row.get("is_main_quest")),
+        is_regenerative=bool(row.get("is_regenerative")),
+        ap_cost=row.get("ap_cost"),
     )
 
 
@@ -121,6 +127,8 @@ def create_task(supabase: Client, payload: TaskCreate) -> Task:
         "notes": payload.notes,
         "status": TaskStatus.TODO.value,
         "source": "manual",
+        "is_main_quest": payload.is_main_quest,
+        "is_regenerative": payload.is_regenerative,
     }
     # `daily_tasks.date` is currently NOT NULL (migration 003). When the
     # column is later relaxed to support backlog, omitting `date` here
@@ -159,6 +167,10 @@ def update_task(supabase: Client, task_id: str, payload: TaskUpdate) -> Task:
         update["estimated_minutes"] = payload.estimated_minutes
     if payload.notes is not None:
         update["notes"] = payload.notes
+    if payload.is_main_quest is not None:
+        update["is_main_quest"] = payload.is_main_quest
+    if payload.is_regenerative is not None:
+        update["is_regenerative"] = payload.is_regenerative
 
     if not update:
         return _row_to_task(row)
@@ -215,6 +227,26 @@ def complete_task(supabase: Client, task_id: str) -> TaskCompletionResult:
         new_streak=post_streak,
         bonus_reasons=bonus_reasons,
     )
+
+
+def uncomplete_task(supabase: Client, task_id: str) -> Task:
+    """Revert a done task back to todo. Idempotent on already-todo rows."""
+    user_id = get_user_id(supabase)
+    row = _fetch_owned_row(supabase, task_id, user_id)
+    if not row:
+        raise TaskNotFound(task_id)
+    update = {
+        "status": TaskStatus.TODO.value,
+        "completed": False,
+        "completed_at": None,
+    }
+    res = (
+        supabase.table(config.TABLE_DAILY_TASKS)
+        .update(update)
+        .eq("id", task_id)
+        .execute()
+    )
+    return _row_to_task(res.data[0] if res.data else {**row, **update})
 
 
 def skip_task(supabase: Client, task_id: str) -> Task:

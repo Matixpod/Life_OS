@@ -5,6 +5,9 @@ class Settings(BaseSettings):
     supabase_url: str
     supabase_key: str
     anthropic_api_key: str
+    gemini_api_key: str = ""
+    deepseek_api_key: str = ""
+    ollama_base_url: str = "http://localhost:11434"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -40,3 +43,14 @@ TABLE_KRONOS_SNAPSHOTS = "kronos_snapshots"
 TABLE_KRONOS_ANALYSES = "kronos_analyses"
 
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
+
+# AI provider abstraction
+TABLE_AI_MODEL_PREFERENCES = "ai_model_preferences"
+TABLE_ARES_SCORES = "ares_scores"
+TABLE_ARES_ANALYSES = "ares_analyses"
+
+DEFAULT_OLLAMA_MODEL = "qwen2.5:7b-instruct-q4_K_M"
+
+# Daily System (migration 009)
+TABLE_DAILY_LOGS = "daily_logs"
+TABLE_STAMINA_BOOSTS = "stamina_boosts"

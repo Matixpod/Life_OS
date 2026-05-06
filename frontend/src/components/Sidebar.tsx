@@ -3,11 +3,12 @@ import {
   Apple,
   BookOpen,
   Brain,
-  CheckSquare,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Dumbbell,
   Flame,
+  FolderKanban,
   Heart,
   Home,
   LayoutGrid,
@@ -15,9 +16,10 @@ import {
   Moon,
   Newspaper,
   Pill,
+  Repeat2,
+  Settings,
   ShieldCheck,
   Sparkles,
-  Target,
   User,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -31,11 +33,17 @@ interface NavItem {
 
 const SECTIONS: { title: string; items: NavItem[] }[] = [
   {
-    title: 'DAILY',
+    title: 'PLAN',
     items: [
       { to: '/', icon: Home, label: 'Dashboard' },
-      { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
-      { to: '/goals', icon: Target, label: 'Goals' },
+      { to: '/calendar', icon: CalendarDays, label: 'Kalendarz' },
+      { to: '/habits', icon: Repeat2, label: 'Habity' },
+      { to: '/projects', icon: FolderKanban, label: 'Projekty' },
+    ],
+  },
+  {
+    title: 'DAILY',
+    items: [
       { to: '/sleep', icon: Moon, label: 'Sleep & Energy' },
       { to: '/supplements', icon: Pill, label: 'Supplements' },
     ],
@@ -58,11 +66,15 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
       { to: '/intelligence', icon: Newspaper, label: 'Intelligence' },
       { to: '/review', icon: Library, label: 'Review' },
       { to: '/kronos', icon: ShieldCheck, label: 'KRONOS' },
+      { to: '/ares', icon: Heart, label: 'ARES' },
     ],
   },
   {
     title: 'YOU',
-    items: [{ to: '/profile', icon: User, label: 'Profile' }],
+    items: [
+      { to: '/profile', icon: User, label: 'Profile' },
+      { to: '/settings/ai', icon: Settings, label: 'AI Settings' },
+    ],
   },
 ];
 

@@ -43,7 +43,7 @@ def _seed_done_dates(fake: FakeSupabase, category: str, dates: list[date]) -> No
 def test_create_task(fake_supabase: FakeSupabase):
     payload = TaskCreate(
         title="  Run 5km  ",  # leading/trailing whitespace must be stripped
-        category=TaskCategory.VITALITY,
+        category=TaskCategory.HEALTH,
         priority=TaskPriority.HIGH,
         scheduled_date=date(2026, 4, 29),
         estimated_minutes=40,
@@ -51,7 +51,7 @@ def test_create_task(fake_supabase: FakeSupabase):
     task = task_service.create_task(fake_supabase, payload)
 
     assert task.title == "Run 5km"
-    assert task.category == TaskCategory.VITALITY
+    assert task.category == TaskCategory.HEALTH
     assert task.priority == TaskPriority.HIGH
     assert task.status == TaskStatus.TODO
     assert task.scheduled_date == date(2026, 4, 29)
@@ -69,7 +69,7 @@ def test_create_task(fake_supabase: FakeSupabase):
 def test_complete_task(fake_supabase: FakeSupabase):
     payload = TaskCreate(
         title="Cardio",
-        category=TaskCategory.VITALITY,
+        category=TaskCategory.HEALTH,
         priority=TaskPriority.MEDIUM,
         scheduled_date=date.today(),
     )
@@ -95,7 +95,7 @@ def test_complete_already_done_raises(fake_supabase: FakeSupabase):
         fake_supabase,
         TaskCreate(
             title="x",
-            category=TaskCategory.INTELLECT,
+            category=TaskCategory.KNOWLEDGE,
             priority=TaskPriority.LOW,
             scheduled_date=date.today(),
         ),
@@ -114,7 +114,7 @@ def test_complete_skipped_raises(fake_supabase: FakeSupabase):
         fake_supabase,
         TaskCreate(
             title="x",
-            category=TaskCategory.WILLPOWER,
+            category=TaskCategory.OTHER,
             priority=TaskPriority.LOW,
             scheduled_date=date.today(),
         ),
@@ -133,7 +133,7 @@ def test_soft_delete_keeps_row(fake_supabase: FakeSupabase):
         fake_supabase,
         TaskCreate(
             title="x",
-            category=TaskCategory.DISCIPLINE,
+            category=TaskCategory.OTHER,
             priority=TaskPriority.MEDIUM,
             scheduled_date=date.today(),
         ),
@@ -152,9 +152,9 @@ def test_soft_delete_keeps_row(fake_supabase: FakeSupabase):
 def test_daily_tasks_grouping(fake_supabase: FakeSupabase):
     today = date.today()
     for cat, prio in [
-        (TaskCategory.VITALITY, TaskPriority.HIGH),
-        (TaskCategory.VITALITY, TaskPriority.MEDIUM),
-        (TaskCategory.INTELLECT, TaskPriority.HIGH),
+        (TaskCategory.HEALTH, TaskPriority.HIGH),
+        (TaskCategory.HEALTH, TaskPriority.MEDIUM),
+        (TaskCategory.KNOWLEDGE, TaskPriority.HIGH),
     ]:
         task_service.create_task(
             fake_supabase,
@@ -170,8 +170,8 @@ def test_daily_tasks_grouping(fake_supabase: FakeSupabase):
     assert daily.total_completed == 1
     assert pytest.approx(daily.completion_rate, rel=1e-6) == 1 / 3
 
-    vit = daily.by_category["vitality"]
-    intel = daily.by_category["intellect"]
+    vit = daily.by_category["health"]
+    intel = daily.by_category["knowledge"]
     assert vit.planned == 2 and vit.completed == 1
     assert intel.planned == 1 and intel.completed == 0
     # Vitality completed → some XP (>= base 50). Intellect = 0.

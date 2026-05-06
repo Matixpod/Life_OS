@@ -252,12 +252,11 @@ export interface PostponePayload {
 // ─── KRONOS — Discipline & Consistency agent ────────────────────────────────
 
 export type TaskCategory =
-  | 'vitality'
-  | 'intellect'
-  | 'discipline'
-  | 'wealth'
-  | 'charisma'
-  | 'willpower';
+  | 'health'
+  | 'work'
+  | 'knowledge'
+  | 'relationships'
+  | 'other';
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'skipped';
 export type TrendDirection = 'up' | 'down' | 'stable';
@@ -350,6 +349,12 @@ export interface Task {
   estimated_minutes: number | null;
   notes: string | null;
   created_at: string;
+  task_type?: 'task' | 'habit_entry' | 'project_task';
+  habit_id?: string | null;
+  project_task_id?: string | null;
+  is_main_quest?: boolean;
+  is_regenerative?: boolean;
+  ap_cost?: number | null;
 }
 
 export interface TaskCreatePayload {
@@ -359,6 +364,8 @@ export interface TaskCreatePayload {
   scheduled_date?: string | null;
   estimated_minutes?: number | null;
   notes?: string | null;
+  is_main_quest?: boolean;
+  is_regenerative?: boolean;
 }
 
 export interface TaskUpdatePayload {
@@ -369,6 +376,8 @@ export interface TaskUpdatePayload {
   scheduled_date?: string | null;
   estimated_minutes?: number | null;
   notes?: string | null;
+  is_main_quest?: boolean;
+  is_regenerative?: boolean;
 }
 
 export interface CategoryDaySummary {
@@ -412,4 +421,431 @@ export interface TaskListFilters {
   status?: TaskStatus;
   limit?: number;
   offset?: number;
+}
+
+// ─── AI Provider Selector ──────────────────────────────────────────────────
+
+export type AIProvider = 'claude' | 'gemini' | 'deepseek' | 'ollama';
+
+export interface AIModelInfo {
+  id: string;
+  name: string;
+  recommended: boolean;
+  vram_gb: number | null;
+}
+
+export interface AIAvailableModels {
+  claude: AIModelInfo[];
+  gemini: AIModelInfo[];
+  deepseek: AIModelInfo[];
+  ollama: AIModelInfo[];
+}
+
+export interface AIModelPreference {
+  user_id: string;
+  agent_id: string;
+  provider: AIProvider;
+  model_name: string;
+  temperature: number;
+  updated_at: string | null;
+}
+
+export interface AIPreferencesResponse {
+  preferences: AIModelPreference[];
+}
+
+export interface AIProviderHealthStatus {
+  provider: AIProvider;
+  online: boolean;
+  error_message: string | null;
+}
+
+export interface AIHealthResponse {
+  providers: AIProviderHealthStatus[];
+}
+
+export interface AISetPreferencePayload {
+  provider: AIProvider;
+  model_name: string;
+  temperature?: number;
+}
+
+// ─── ARES — Vitality & Physical Health agent ───────────────────────────────
+
+export type VitalitySubcategory = 'activity' | 'nutrition' | 'sleep' | 'hydration';
+export type AresToneMode = 'peak' | 'good' | 'needs_work' | 'crisis';
+
+export interface AresSubcategoryScore {
+  subcategory: VitalitySubcategory;
+  score: number;
+  tasks_detected: number;
+  days_active: number;
+  days_analyzed: number;
+  weight: number;
+}
+
+export interface AresScoreResult {
+  user_id: string;
+  health_score: number;
+  subcategory_scores: AresSubcategoryScore[];
+  score_delta: number | null;
+  tone_mode: AresToneMode;
+  computed_at: string;
+}
+
+export interface AresScoreHistoryPoint {
+  date: string;
+  score: number | null;
+}
+
+export interface AresAnalysis {
+  id: string;
+  analysis_text: string;
+  health_score: number;
+  score_delta: number | null;
+  analysis_type: string;
+  status: 'complete' | 'incomplete';
+  created_at: string;
+}
+
+export interface AresDashboard {
+  current_score: AresScoreResult;
+  score_history: AresScoreHistoryPoint[];
+  last_analysis: AresAnalysis | null;
+  last_analysis_at: string | null;
+}
+
+export interface AresContext {
+  user_id: string;
+  generated_at: string;
+  score: AresScoreResult;
+  kronos_available: boolean;
+  prompt_text: string;
+}
+
+export interface AresAnalysisRequest {
+  analysis_type?: 'weekly' | 'crisis' | 'progress';
+}
+
+// ─── Redesign: Habits / Projects / Calendar / Proposals ─────────────────────
+
+export type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'selected_days' | 'custom';
+
+export interface CustomRecurrenceRule {
+  interval?: number;
+  unit?: 'days' | 'weeks' | 'months';
+  times_per?: number | null;
+  per?: 'week' | 'month' | null;
+}
+
+export interface Habit {
+  id: string;
+  user_id: string;
+  title: string;
+  category: TaskCategory;
+  priority: TaskPriority;
+  recurrence_type: RecurrenceType;
+  selected_days: number[] | null;
+  monthly_day: number | null;
+  custom_rule: CustomRecurrenceRule | null;
+  is_active: boolean;
+  start_date: string;
+  end_date: string | null;
+  estimated_minutes: number | null;
+  is_regenerative: boolean;
+  streak: number;
+  longest_streak: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string | null;
+  completed_today: boolean;
+}
+
+export interface HabitCreatePayload {
+  title: string;
+  category: TaskCategory;
+  priority?: TaskPriority;
+  recurrence_type?: RecurrenceType;
+  selected_days?: number[] | null;
+  monthly_day?: number | null;
+  custom_rule?: CustomRecurrenceRule | null;
+  start_date?: string;
+  end_date?: string | null;
+  estimated_minutes?: number | null;
+  is_regenerative?: boolean;
+  notes?: string | null;
+}
+
+export interface HabitUpdatePayload {
+  title?: string;
+  category?: TaskCategory;
+  priority?: TaskPriority;
+  recurrence_type?: RecurrenceType;
+  selected_days?: number[] | null;
+  monthly_day?: number | null;
+  custom_rule?: CustomRecurrenceRule | null;
+  start_date?: string;
+  end_date?: string | null;
+  estimated_minutes?: number | null;
+  is_regenerative?: boolean;
+  is_active?: boolean;
+  notes?: string | null;
+}
+
+export interface HabitCompletionResult {
+  habit: Habit;
+  daily_task: Task;
+  streak_updated: boolean;
+  new_streak: number;
+}
+
+export type ProjectV2Status = 'active' | 'paused' | 'completed' | 'dropped' | 'archived' | 'on_hold';
+
+export interface ProjectV2 {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  category: TaskCategory | null;
+  status: ProjectV2Status;
+  priority: TaskPriority;
+  due_date: string | null;
+  color: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface ProjectV2CreatePayload {
+  title: string;
+  description?: string | null;
+  category: TaskCategory;
+  priority?: TaskPriority;
+  due_date?: string | null;
+  color?: string;
+}
+
+export interface ProjectV2UpdatePayload {
+  title?: string;
+  description?: string | null;
+  category?: TaskCategory;
+  priority?: TaskPriority;
+  due_date?: string | null;
+  color?: string;
+  status?: ProjectV2Status;
+}
+
+export interface ProjectSection {
+  id: string;
+  project_id: string;
+  user_id: string;
+  title: string;
+  position: number;
+  created_at: string;
+}
+
+export interface ProjectTask {
+  id: string;
+  project_id: string;
+  section_id: string | null;
+  user_id: string;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  due_date: string | null;
+  completed_at: string | null;
+  estimated_minutes: number | null;
+  notes: string | null;
+  position: number;
+  created_at: string;
+}
+
+export interface ProjectSectionWithTasks extends ProjectSection {
+  tasks: ProjectTask[];
+}
+
+export interface ProjectProgress {
+  total_tasks: number;
+  completed_tasks: number;
+  completion_percentage: number;
+  overdue_count: number;
+}
+
+export interface ProjectFull extends ProjectV2 {
+  sections: ProjectSectionWithTasks[];
+  progress: ProjectProgress;
+}
+
+export interface ProjectSectionCreatePayload {
+  title: string;
+  position?: number;
+}
+
+export interface ProjectTaskCreatePayload {
+  title: string;
+  section_id?: string | null;
+  priority?: TaskPriority;
+  due_date?: string | null;
+  estimated_minutes?: number | null;
+  notes?: string | null;
+}
+
+export interface ProjectTaskUpdatePayload {
+  title?: string;
+  section_id?: string | null;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  due_date?: string | null;
+  estimated_minutes?: number | null;
+  notes?: string | null;
+  position?: number;
+}
+
+export type ProposalType = 'task' | 'habit';
+export type ProposalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+
+export interface AgentTaskProposal {
+  id: string;
+  user_id: string;
+  agent_id: string;
+  proposed_title: string;
+  proposed_category: TaskCategory;
+  proposed_date: string;
+  proposed_priority: TaskPriority;
+  proposed_type: ProposalType;
+  reason: string;
+  status: ProposalStatus;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface ProposalApproveResult {
+  proposal: AgentTaskProposal;
+  kind: ProposalType;
+  task_id: string | null;
+  habit_id: string | null;
+}
+
+export type CalendarItemType = 'task' | 'habit_entry' | 'project_task';
+
+export interface CalendarItem {
+  id: string;
+  type: CalendarItemType;
+  title: string;
+  category: TaskCategory | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  scheduled_date: string;
+  habit_id: string | null;
+  project_id: string | null;
+  project_title: string | null;
+  project_task_id: string | null;
+  agent_route: string;
+  is_main_quest?: boolean;
+}
+
+export interface CalendarDay {
+  date: string;
+  items: CalendarItem[];
+  proposals: AgentTaskProposal[];
+  completion_rate: number;
+}
+
+export interface CalendarRange {
+  start: string;
+  end: string;
+  days: CalendarDay[];
+}
+
+export interface ReorderRequest {
+  ids: string[];
+}
+
+// Color tokens shared across Calendar / Habits / Projects.
+export const CATEGORY_COLORS: Record<TaskCategory, { hex: string; bg: string; text: string; border: string }> = {
+  health: { hex: '#10b981', bg: 'bg-green-500', text: 'text-green-500', border: 'border-green-500' },
+  work: { hex: '#f59e0b', bg: 'bg-amber-500', text: 'text-amber-500', border: 'border-amber-500' },
+  knowledge: { hex: '#3b82f6', bg: 'bg-blue-500', text: 'text-blue-500', border: 'border-blue-500' },
+  relationships: { hex: '#f97316', bg: 'bg-orange-500', text: 'text-orange-500', border: 'border-orange-500' },
+  other: { hex: '#64748b', bg: 'bg-slate-500', text: 'text-slate-500', border: 'border-slate-500' },
+};
+
+export const CATEGORY_LABELS_PL: Record<TaskCategory, string> = {
+  health: 'Zdrowie & fizyczność',
+  work: 'Praca & finanse',
+  knowledge: 'Wiedza & rozwój',
+  relationships: 'Relacje & społeczność',
+  other: 'Inne',
+};
+
+export const ISO_DOW_LABELS_PL: Record<number, string> = {
+  1: 'Pon',
+  2: 'Wt',
+  3: 'Śr',
+  4: 'Czw',
+  5: 'Pt',
+  6: 'Sob',
+  7: 'Nd',
+};
+
+// ─── Daily System (migration 009) ──────────────────────────────────────────
+
+export type BoostType =
+  | 'coffee'
+  | 'power_nap'
+  | 'nap'
+  | 'walk'
+  | 'water'
+  | 'meditation';
+
+export interface DailyLog {
+  id: string;
+  date: string;
+  sleep_score: number;
+  energy_score: number;
+  stamina_pool: number;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface TaskAPItem {
+  task_id: string;
+  title: string;
+  ap_cost: number;
+  is_completed: boolean;
+  is_regenerative: boolean;
+}
+
+export interface StaminaStatus {
+  date: string;
+  base_pool: number;
+  boosts_total: number;
+  ap_used: number;
+  ap_restored: number;
+  ap_available: number;
+  percentage: number;
+  tasks_breakdown: TaskAPItem[];
+  is_initialized: boolean;
+}
+
+export interface BoostAvailability {
+  boost_type: BoostType;
+  label: string;
+  ap_restored: number;
+  is_available: boolean;
+  cooldown_remaining_min: number | null;
+  uses_today: number;
+  max_per_day: number | null;
+}
+
+export interface BoostResult {
+  boost_type: BoostType;
+  ap_restored: number;
+  new_ap_available: number;
+  cooldown_until: string;
+}
+
+export interface DailyLogPayload {
+  sleep_score: number;
+  energy_score: number;
+  notes?: string | null;
 }

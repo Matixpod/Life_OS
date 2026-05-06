@@ -19,14 +19,14 @@ def _sample_context() -> KronosContext:
         generated_at=datetime(2026, 4, 29, 8, 0, tzinfo=UTC),
         streaks=[
             StreakData(
-                category=TaskCategory.VITALITY,
+                category=TaskCategory.HEALTH,
                 current_streak=3,
                 longest_streak=5,
                 last_active_date=date(2026, 4, 29),
                 trend="up",
             ),
             StreakData(
-                category=TaskCategory.INTELLECT,
+                category=TaskCategory.KNOWLEDGE,
                 current_streak=0,
                 longest_streak=4,
                 last_active_date=date(2026, 4, 26),
@@ -35,7 +35,7 @@ def _sample_context() -> KronosContext:
         ],
         patterns=[
             PatternData(
-                category=TaskCategory.VITALITY,
+                category=TaskCategory.HEALTH,
                 by_day_of_week={"monday": 0.8, "tuesday": 0.6},
                 by_hour_of_day={7: 0.5, 8: 0.5},
                 peak_zones=["monday_morning"],
@@ -45,7 +45,7 @@ def _sample_context() -> KronosContext:
         ],
         pve_scores=[
             PvEScore(
-                category=TaskCategory.VITALITY,
+                category=TaskCategory.HEALTH,
                 overall_ratio=0.75,
                 daily_breakdown=[
                     DailyPvE(date=date(2026, 4, 28), planned=4, completed=3, ratio=0.75)
@@ -72,24 +72,24 @@ def test_to_prompt_string_is_deterministic():
 def test_global_score_is_none_when_fewer_than_three_categories_have_data():
     pves = [
         PvEScore(
-            category=TaskCategory.VITALITY,
+            category=TaskCategory.HEALTH,
             overall_ratio=0.8,
             daily_breakdown=[
                 DailyPvE(date=date(2026, 4, 28), planned=2, completed=2, ratio=1.0)
             ],
         ),
         PvEScore(
-            category=TaskCategory.INTELLECT,
+            category=TaskCategory.KNOWLEDGE,
             overall_ratio=0.5,
             daily_breakdown=[
                 DailyPvE(date=date(2026, 4, 28), planned=2, completed=1, ratio=0.5)
             ],
         ),
         # 4 other categories with no daily breakdown
-        PvEScore(category=TaskCategory.DISCIPLINE, overall_ratio=0.0),
-        PvEScore(category=TaskCategory.WEALTH, overall_ratio=0.0),
-        PvEScore(category=TaskCategory.CHARISMA, overall_ratio=0.0),
-        PvEScore(category=TaskCategory.WILLPOWER, overall_ratio=0.0),
+        PvEScore(category=TaskCategory.OTHER, overall_ratio=0.0),
+        PvEScore(category=TaskCategory.WORK, overall_ratio=0.0),
+        PvEScore(category=TaskCategory.RELATIONSHIPS, overall_ratio=0.0),
+        PvEScore(category=TaskCategory.OTHER, overall_ratio=0.0),
     ]
 
     assert _global_score(pves) is None
@@ -102,7 +102,7 @@ def test_global_score_returns_value_with_three_or_more_categories():
             overall_ratio=0.6,
             daily_breakdown=[DailyPvE(date=date(2026, 4, 28), planned=1, completed=1, ratio=0.6)],
         )
-        for cat in (TaskCategory.VITALITY, TaskCategory.INTELLECT, TaskCategory.DISCIPLINE)
+        for cat in (TaskCategory.HEALTH, TaskCategory.KNOWLEDGE, TaskCategory.OTHER)
     ]
     score = _global_score(pves)
     assert score is not None

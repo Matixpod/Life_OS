@@ -174,6 +174,24 @@ async def complete_task_route(
     return result
 
 
+@router.post("/{task_id}/uncomplete", response_model=Task)
+async def uncomplete_task_route(
+    task_id: str,
+    background: BackgroundTasks,
+    supabase: Client = Depends(get_supabase),
+) -> Task:
+    try:
+        task = task_service.uncomplete_task(supabase, task_id)
+    except TaskNotFound:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    except Exception as e:
+        logger.exception("tasks.uncomplete error")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    background.add_task(refresh_streaks, _category_value(task))
+    return task
+
+
 @router.post("/{task_id}/skip", response_model=Task)
 async def skip_task_route(
     task_id: str,

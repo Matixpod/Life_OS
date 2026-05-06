@@ -35,14 +35,14 @@ def _ctx_with_data() -> KronosContext:
         generated_at=datetime(2026, 4, 29, 8, 0, tzinfo=UTC),
         streaks=[
             StreakData(
-                category=TaskCategory.VITALITY,
+                category=TaskCategory.HEALTH,
                 current_streak=3,
                 longest_streak=5,
                 trend="up",
             )
         ],
-        patterns=[PatternData(category=TaskCategory.VITALITY, sample_size=10)],
-        pve_scores=[PvEScore(category=TaskCategory.VITALITY, overall_ratio=0.6)],
+        patterns=[PatternData(category=TaskCategory.HEALTH, sample_size=10)],
+        pve_scores=[PvEScore(category=TaskCategory.HEALTH, overall_ratio=0.6)],
         global_consistency_score=70.0,
         alerts=[],
     )

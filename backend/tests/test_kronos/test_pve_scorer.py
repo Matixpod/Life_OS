@@ -32,11 +32,11 @@ def test_full_execution_today(fake_supabase):
     today = date(2026, 4, 29)
     _seed_tasks(
         fake_supabase,
-        [(today, TaskCategory.VITALITY, "done")] * 5,
+        [(today, TaskCategory.HEALTH, "done")] * 5,
     )
 
     scores = calculate_pve(fake_supabase, today=today)
-    vit = _score_for(scores, TaskCategory.VITALITY)
+    vit = _score_for(scores, TaskCategory.HEALTH)
 
     assert vit.overall_ratio == 1.0
     assert vit.zero_execution_days == []
@@ -52,11 +52,11 @@ def test_zero_execution_day(fake_supabase):
     yesterday = today - timedelta(days=1)
     _seed_tasks(
         fake_supabase,
-        [(yesterday, TaskCategory.WEALTH, "todo")] * 3,
+        [(yesterday, TaskCategory.WORK, "todo")] * 3,
     )
 
     scores = calculate_pve(fake_supabase, today=today)
-    wlt = _score_for(scores, TaskCategory.WEALTH)
+    wlt = _score_for(scores, TaskCategory.WORK)
 
     assert yesterday in wlt.zero_execution_days
     assert wlt.overall_ratio < 1.0
@@ -67,11 +67,11 @@ def test_mixed_week(fake_supabase):
     rows: list[tuple[date, TaskCategory, str]] = []
     for i in range(7):
         d = today - timedelta(days=i)
-        rows.append((d, TaskCategory.CHARISMA, "done" if i % 2 == 0 else "todo"))
+        rows.append((d, TaskCategory.RELATIONSHIPS, "done" if i % 2 == 0 else "todo"))
 
     _seed_tasks(fake_supabase, rows)
     scores = calculate_pve(fake_supabase, today=today)
-    cha = _score_for(scores, TaskCategory.CHARISMA)
+    cha = _score_for(scores, TaskCategory.RELATIONSHIPS)
 
     assert 0.0 < cha.overall_ratio < 1.0
     assert cha.best_day is not None

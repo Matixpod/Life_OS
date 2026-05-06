@@ -1,8 +1,12 @@
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import AgentProposals from '../components/calendar/AgentProposals';
 import KronosDashboard from '../components/kronos/KronosDashboard';
+import { useFocusItem } from '../hooks/useFocusItem';
 
 export default function Kronos() {
+  const focus = useFocusItem();
+
   return (
     <div className="max-w-6xl mx-auto">
       <Link
@@ -19,6 +23,16 @@ export default function Kronos() {
           <ShieldCheck size={13} /> Streaks · patterns · plan vs execution
         </p>
       </header>
+
+      {focus && (
+        <div className="mb-4 rounded-md border border-accent-blue/40 bg-accent-blue/10 px-3 py-2 text-xs text-accent-blue">
+          Z kalendarza: {focus.type ?? 'item'} <span className="font-mono">{focus.id}</span>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <AgentProposals agentId="kronos" />
+      </div>
 
       <KronosDashboard />
     </div>

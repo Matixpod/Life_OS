@@ -25,6 +25,7 @@ interface UseTasksApi extends TaskContextValue {
   createTask: (payload: TaskCreatePayload) => Promise<Task>;
   updateTask: (id: string, payload: TaskUpdatePayload) => Promise<Task>;
   completeTask: (id: string) => Promise<TaskCompletionResult>;
+  uncompleteTask: (id: string) => Promise<Task>;
   skipTask: (id: string) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
 }
@@ -88,6 +89,21 @@ export function useTasks(): UseTasksApi {
     }
   };
 
+  const uncompleteTask = async (id: string): Promise<Task> => {
+    patchToday((day) =>
+      patchTaskInDay(day, id, (t) => ({ ...t, status: 'todo', completed_at: null })),
+    );
+    try {
+      const task = await tasksApi.uncompleteTask(id);
+      patchToday((day) => patchTaskInDay(day, id, () => task));
+      refreshKronos();
+      return task;
+    } catch (e) {
+      await refreshToday();
+      throw e;
+    }
+  };
+
   const skipTask = async (id: string): Promise<Task> => {
     patchToday((day) => patchTaskInDay(day, id, setStatusOptimistic('skipped')));
     try {
@@ -126,6 +142,7 @@ export function useTasks(): UseTasksApi {
     createTask,
     updateTask,
     completeTask,
+    uncompleteTask,
     skipTask,
     deleteTask,
   };

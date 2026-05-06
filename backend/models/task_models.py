@@ -16,6 +16,7 @@ truth for the RPG-style category enum.
 from datetime import date as DateType
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -71,6 +72,12 @@ class TaskCreate(BaseModel):
     `scheduled_date` is optional to support the Backlog view (tasks with no
     planned date). When omitted, the service layer must either reject the
     request (until the DB allows nullable `date`) or default to today.
+
+    Daily System (009): `is_main_quest` is enforced unique per (user, date)
+    by a partial unique index — the service layer surfaces a 409 if the
+    user tries to set a second one for the same day. `is_regenerative`
+    flips the AP semantics: a regenerative task with `estimated_minutes=20`
+    restores 20 AP instead of consuming it.
     """
 
     title: str = Field(min_length=1, max_length=200)
@@ -79,6 +86,8 @@ class TaskCreate(BaseModel):
     scheduled_date: DateType | None = None
     estimated_minutes: int | None = Field(default=None, ge=5, le=480)
     notes: str | None = Field(default=None, max_length=1000)
+    is_main_quest: bool = False
+    is_regenerative: bool = False
 
 
 class TaskUpdate(BaseModel):
@@ -91,6 +100,8 @@ class TaskUpdate(BaseModel):
     scheduled_date: DateType | None = None
     estimated_minutes: int | None = Field(default=None, ge=5, le=480)
     notes: str | None = Field(default=None, max_length=1000)
+    is_main_quest: bool | None = None
+    is_regenerative: bool | None = None
 
 
 # ─── Resource model ──────────────────────────────────────────────────────────
@@ -100,6 +111,11 @@ class Task(BaseModel):
     """Full task record returned by the API.
 
     `scheduled_date` is nullable to represent backlog items.
+
+    Redesign (008): `task_type` distinguishes regular tasks from habit
+    instances and project-task mirrors. `habit_id` / `project_task_id`
+    point back to the parent record when applicable. Defaults preserve
+    backwards compatibility — existing `daily_tasks` rows are `task_type='task'`.
     """
 
     id: str
@@ -113,6 +129,12 @@ class Task(BaseModel):
     estimated_minutes: int | None = None
     notes: str | None = None
     created_at: datetime
+    task_type: Literal["task", "habit_entry", "project_task"] = "task"
+    habit_id: str | None = None
+    project_task_id: str | None = None
+    is_main_quest: bool = False
+    is_regenerative: bool = False
+    ap_cost: int | None = None  # generated column: equals estimated_minutes
 
 
 # ─── Aggregations ────────────────────────────────────────────────────────────

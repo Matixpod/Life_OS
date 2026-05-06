@@ -53,13 +53,9 @@ export default function Goals() {
     setProjects(list);
   };
 
-  const refreshPlan = async () => {
-    const p = await api.getPlan(today);
-    setPlan(p);
-  };
-
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     Promise.all([
       api.getTasks(today),

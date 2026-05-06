@@ -1,16 +1,27 @@
-"""Streams KRONOS analyses from Claude.
+"""Streams KRONOS analyses through the AI Provider abstraction.
 
 Stateless: accepts a fully-built KronosContext and yields raw text chunks.
 The router is responsible for SSE framing and persistence.
+
+The provider (Claude / Gemini / DeepSeek / Ollama) is resolved per-user from
+`ai_model_preferences`. Agent logic — the system prompt and message
+construction — is unchanged from the original Claude-only implementation.
 """
+
+from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from typing import Literal
 
-import anthropic
+from supabase import Client
 
-from core import config
+from core.supabase_client import get_user_id
 from models.kronos import AnalysisType, KronosContext, TaskCategory
+from services.ai_provider import (
+    AIMessage,
+    AIProviderConfig,
+    AIProviderFactory,
+)
 
 SYSTEM_PROMPT = """You are KRONOS, a cold and precise discipline analyst. You speak in data, not opinions.
 You have access to the user's complete behavioral history across all life domains.
@@ -25,6 +36,7 @@ Rules:
 - Tone: respectful, direct, no filler phrases"""
 
 _MAX_TOKENS = 2000
+_AGENT_ID = "kronos"
 
 
 def _user_message(
@@ -45,20 +57,24 @@ async def stream_analysis(
     analysis_type: AnalysisType = "weekly",
     focus_category: TaskCategory | None = None,
     *,
-    model: str = config.CLAUDE_MODEL,
+    supabase: Client,
 ) -> AsyncIterator[str]:
-    """Yield Claude's KRONOS analysis as raw text chunks."""
-    client = anthropic.AsyncAnthropic(api_key=config.settings.anthropic_api_key)
-    user_msg = _user_message(context, analysis_type, focus_category)
-
-    async with client.messages.stream(
-        model=model,
+    """Yield the configured provider's KRONOS analysis as raw text chunks."""
+    user_id = get_user_id(supabase)
+    provider, cfg = await AIProviderFactory.get_provider_for_agent(
+        agent_id=_AGENT_ID, user_id=user_id, supabase=supabase
+    )
+    runtime_cfg = AIProviderConfig(
+        provider=cfg.provider,
+        model_name=cfg.model_name,
+        temperature=cfg.temperature,
         max_tokens=_MAX_TOKENS,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}],
-    ) as stream:
-        async for text in stream.text_stream:
-            yield text
+        system_prompt=SYSTEM_PROMPT,
+    )
+    user_msg = _user_message(context, analysis_type, focus_category)
+    messages = [AIMessage(role="user", content=user_msg)]
+    async for chunk in provider.stream(messages, runtime_cfg):
+        yield chunk
 
 
 __all__ = ["SYSTEM_PROMPT", "stream_analysis"]

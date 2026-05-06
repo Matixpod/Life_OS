@@ -1,13 +1,16 @@
-import { AlertTriangle, CalendarPlus } from 'lucide-react';
+import { AlertTriangle, CalendarPlus, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { tasksApi } from '../../api/tasks';
+import { useStamina } from '../../hooks/useStamina';
 import { useTasks } from '../../hooks/useTasks';
 import type { Task, TaskBonusReason, TaskCategory } from '../../types';
 import { CATEGORIES, CATEGORY_META } from './categories';
 import { useCategoryFilter } from '../../hooks/useCategoryFilter';
 import CategoryFilter from './CategoryFilter';
-import TaskCard from './TaskCard';
+import QuestCard from './QuestCard';
+import TaskEditModal from './TaskEditModal';
 import XPPopup from './XPPopup';
+import { emitCombatText } from '../ui/floatingCombatTextBus';
 
 interface PopupState {
   taskId: string;
@@ -21,11 +24,21 @@ interface PopupState {
  * the user sees a single "Add your first task" hint.
  */
 export default function DailyView() {
-  const { today, loading, refreshToday, completeTask, skipTask, deleteTask, updateTask } =
-    useTasks();
+  const {
+    today,
+    loading,
+    refreshToday,
+    completeTask,
+    uncompleteTask,
+    skipTask,
+    deleteTask,
+    updateTask,
+  } = useTasks();
   const [filter, setFilter] = useCategoryFilter();
   const [overdue, setOverdue] = useState<Task[]>([]);
   const [popup, setPopup] = useState<PopupState | null>(null);
+  const [editing, setEditing] = useState<Task | null>(null);
+  const { status: stamina, refresh: refreshStamina } = useStamina();
 
   // Overdue: any todo task with scheduled_date < today. Fetched separately
   // because /api/v1/tasks/today only returns rows for today's date.
@@ -50,12 +63,11 @@ export default function DailyView() {
 
   const grouped = useMemo(() => {
     const out: Record<TaskCategory, Task[]> = {
-      vitality: [],
-      intellect: [],
-      discipline: [],
-      wealth: [],
-      charisma: [],
-      willpower: [],
+      health: [],
+      work: [],
+      knowledge: [],
+      relationships: [],
+      other: [],
     };
     if (!today) return out;
     for (const t of today.tasks) {
@@ -70,13 +82,46 @@ export default function DailyView() {
     try {
       const result = await completeTask(task.id);
       setPopup({ taskId: task.id, xp: result.xp_earned, reasons: result.bonus_reasons });
+      emitCombatText(`+${result.xp_earned} XP`, 'xp');
+      const minutes = task.estimated_minutes ?? 0;
+      if (minutes > 0) {
+        emitCombatText(
+          task.is_regenerative ? `+${minutes} AP` : `-${minutes} AP`,
+          task.is_regenerative ? 'ap' : 'ap-cost',
+        );
+      }
       window.setTimeout(() => {
         setPopup((p) => (p?.taskId === task.id ? null : p));
       }, 1500);
+      // Completing a task drains (or restores) stamina — keep the bar in sync.
+      void refreshStamina();
     } catch {
       /* refreshToday already fired in hook */
     }
   }
+
+  // Stamina overflow: how many minutes the planned (non-regenerative,
+  // non-completed) tasks exceed the day's pool by. Negative when within
+  // budget — the banner only renders when this is > 0.
+  const overStamina = useMemo(() => {
+    if (!stamina?.is_initialized || !today) return { overMinutes: 0, overflowIds: new Set<string>() };
+    let cumulative = 0;
+    const overflowIds = new Set<string>();
+    const ordered = [...today.tasks].sort((a, b) =>
+      a.created_at.localeCompare(b.created_at),
+    );
+    for (const t of ordered) {
+      if (t.is_regenerative) continue;
+      if (t.status === 'done' || t.status === 'skipped') continue;
+      const minutes = t.estimated_minutes ?? 0;
+      cumulative += minutes;
+      if (cumulative > stamina.base_pool) overflowIds.add(t.id);
+    }
+    return {
+      overMinutes: Math.max(0, cumulative - stamina.base_pool),
+      overflowIds,
+    };
+  }, [stamina, today]);
 
   async function moveOverdueToToday(task: Task): Promise<void> {
     const isoToday = new Date().toISOString().slice(0, 10);
@@ -122,12 +167,32 @@ export default function DailyView() {
         </div>
       )}
 
+      {overStamina.overMinutes > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">
+          <Zap size={14} />
+          Plan dnia przekracza Staminę o{' '}
+          <span className="font-mono">{overStamina.overMinutes} min</span>. Rozważ
+          przeniesienie nadmiarowych zadań lub dodanie boostów.
+        </div>
+      )}
+
       <CategoryFilter value={filter} onChange={setFilter} />
 
       {totalVisible === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-surface/50 p-6 text-center text-sm text-muted">
           Brak zadań — dodaj pierwsze
         </div>
+      )}
+
+      {editing && (
+        <TaskEditModal
+          task={editing}
+          onSave={async (id, payload) => {
+            await updateTask(id, payload);
+            void refreshToday();
+          }}
+          onClose={() => setEditing(null)}
+        />
       )}
 
       {CATEGORIES.map((cat) => {
@@ -174,11 +239,23 @@ export default function DailyView() {
                     {popup?.taskId === t.id && (
                       <XPPopup xp={popup.xp} bonusReasons={popup.reasons} />
                     )}
-                    <TaskCard
+                    <QuestCard
                       task={t}
+                      isOverStamina={overStamina.overflowIds.has(t.id)}
                       onComplete={handleComplete}
-                      onSkip={(task) => void skipTask(task.id).catch(() => {})}
-                      onDelete={(task) => void deleteTask(task.id).catch(() => {})}
+                      onUncomplete={(task) => {
+                        void uncompleteTask(task.id).catch(() => {});
+                        void refreshStamina();
+                      }}
+                      onSkip={(task) => {
+                        void skipTask(task.id).catch(() => {});
+                        void refreshStamina();
+                      }}
+                      onDelete={(task) => {
+                        void deleteTask(task.id).catch(() => {});
+                        void refreshStamina();
+                      }}
+                      onEdit={(task) => setEditing(task)}
                     />
                   </li>
                 ))}

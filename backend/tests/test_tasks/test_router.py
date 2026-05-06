@@ -42,7 +42,7 @@ def client(fake_supabase: FakeSupabase, monkeypatch: pytest.MonkeyPatch):
 def _create(client: TestClient, **overrides: Any) -> dict[str, Any]:
     payload = {
         "title": "x",
-        "category": "vitality",
+        "category": "health",
         "priority": "medium",
         "scheduled_date": date.today().isoformat(),
         **overrides,
@@ -100,13 +100,13 @@ def test_kronos_streak_updates_after_completion(
     # Drop the routers.tasks stub so the real refresh_streaks runs through.
     monkeypatch.setattr("routers.tasks.refresh_streaks", context_builder.refresh_streaks)
 
-    task = _create(client, category="vitality")
+    task = _create(client, category="health")
     res = client.post(f"/api/v1/tasks/{task['id']}/complete")
     assert res.status_code == 200
 
     # TestClient flushes BackgroundTasks before returning the response.
     cached = fake_supabase.tables.get("kronos_streaks", [])
-    vit = [r for r in cached if r["category"] == "vitality"]
+    vit = [r for r in cached if r["category"] == "health"]
     assert len(vit) == 1, f"expected one vitality cache row, got {cached}"
     assert vit[0]["current_streak"] == 1
     assert vit[0]["last_active_date"] == date.today().isoformat()

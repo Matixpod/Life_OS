@@ -6,6 +6,7 @@ import { CATEGORY_META, PRIORITY_BORDER, PRIORITY_LABEL } from './categories';
 interface TaskCardProps {
   task: Task;
   onComplete: (task: Task) => void;
+  onUncomplete?: (task: Task) => void;
   onSkip?: (task: Task) => void;
   onDelete?: (task: Task) => void;
   onEdit?: (task: Task) => void;
@@ -21,6 +22,7 @@ interface TaskCardProps {
 export default function TaskCard({
   task,
   onComplete,
+  onUncomplete,
   onSkip,
   onDelete,
   onEdit,
@@ -55,15 +57,21 @@ export default function TaskCard({
       <div className="px-3 py-2.5 md:py-3 flex items-center gap-3">
         <button
           type="button"
-          aria-label={isDone ? 'Completed' : 'Mark complete'}
-          disabled={isDone || isSkipped}
+          aria-label={isDone ? 'Mark incomplete' : 'Mark complete'}
+          title={isDone ? 'Cofnij wykonanie' : 'Oznacz jako zrobione'}
+          disabled={isSkipped || (isDone && !onUncomplete)}
           onClick={(e) => {
             e.stopPropagation();
-            if (!isDone && !isSkipped) onComplete(task);
+            if (isSkipped) return;
+            if (isDone) {
+              onUncomplete?.(task);
+            } else {
+              onComplete(task);
+            }
           }}
           className={`shrink-0 size-5 rounded-md border flex items-center justify-center transition-all ${
             isDone
-              ? 'bg-accent-emerald border-accent-emerald scale-100'
+              ? 'bg-accent-emerald border-accent-emerald scale-100 hover:bg-accent-emerald/70'
               : 'border-border hover:border-accent-emerald hover:scale-110'
           }`}
         >

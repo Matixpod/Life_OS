@@ -18,7 +18,7 @@ def _task(
         id="t",
         user_id="u",
         title="x",
-        category=TaskCategory.VITALITY,
+        category=TaskCategory.HEALTH,
         status=TaskStatus.DONE,
         priority=priority,
         scheduled_date=scheduled_date,

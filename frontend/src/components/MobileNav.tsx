@@ -1,12 +1,12 @@
-import { Brain, Home, Library, Moon, Newspaper } from 'lucide-react';
+import { CalendarDays, FolderKanban, Home, Repeat2, ShieldCheck } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const ITEMS = [
   { to: '/', icon: Home, label: 'Home' },
-  { to: '/sleep', icon: Moon, label: 'Sleep' },
-  { to: '/cognitive', icon: Brain, label: 'Mind' },
-  { to: '/intelligence', icon: Newspaper, label: 'News' },
-  { to: '/review', icon: Library, label: 'Review' },
+  { to: '/calendar', icon: CalendarDays, label: 'Plan' },
+  { to: '/habits', icon: Repeat2, label: 'Habity' },
+  { to: '/projects', icon: FolderKanban, label: 'Proj.' },
+  { to: '/kronos', icon: ShieldCheck, label: 'KRONOS' },
 ];
 
 export default function MobileNav() {
