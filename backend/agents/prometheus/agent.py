@@ -259,8 +259,157 @@ def parse_report_json(raw: str) -> dict:
     }
 
 
+# ─── strength kcal (used by prometheus_service after session insert) ─────────
+
+
+def _keytel_kcal(
+    *, hr: int, weight: float, age: int, gender: str, duration_min: int
+) -> float:
+    """Keytel et al. 2005 — kJ/min → kcal/min × duration."""
+    if gender == "male":
+        kj_per_min = -55.0969 + 0.6309 * hr + 0.1988 * weight + 0.2017 * age
+    else:
+        kj_per_min = -20.4022 + 0.4472 * hr - 0.1263 * weight + 0.074 * age
+    return max(0.0, (kj_per_min / 4.184) * duration_min)
+
+
+async def _strength_analysis_note(
+    *,
+    label: str,
+    duration_min: int | None,
+    kcal_total: float,
+    fat_grams: float,
+    kcal_epoc: float,
+    tonnage: float,
+    supabase: Client,
+) -> str:
+    try:
+        provider, cfg = await _resolve_provider(supabase, max_tokens=140)
+        from services.ai_provider import AIProviderConfig as _Cfg
+
+        runtime_cfg = _Cfg(
+            provider=cfg.provider,
+            model_name=cfg.model_name,
+            temperature=cfg.temperature,
+            max_tokens=140,
+            system_prompt=SYSTEM_PROMPT,
+        )
+        prompt = (
+            f"Trening siłowy: {label}, czas {duration_min or '—'} min, "
+            f"tonaż {int(tonnage)} kg, spalono {round(kcal_total)} kcal "
+            f"(w tym {fat_grams:.1f} g tłuszczu, EPOC +{round(kcal_epoc)} kcal). "
+            "Daj 1–2 krótkie, konkretne, motywujące zdania po polsku. "
+            "Max 50 słów."
+        )
+        raw = await provider.complete(
+            [AIMessage(role="user", content=prompt)], runtime_cfg
+        )
+        return raw.strip()
+    except Exception:
+        return ""
+
+
+async def analyze_strength_kcal(
+    *,
+    duration_min: int | None,
+    avg_hr: int | None,
+    label: str,
+    exercises: list[dict],
+    profile,  # CardioProfile | None — typed in caller to avoid circular import
+    supabase: Client,
+    skip_note: bool = False,
+) -> dict:
+    """Compute kcal / EPOC / fat split for a strength session.
+
+    Mirrors `cardio_agent.analyze_cardio_session`'s shape so the service layer
+    can update both tables uniformly.
+    """
+
+    # ─── tonnage ─────────────────────────────────────────────────────────
+    tonnage = 0.0
+    for ex in exercises or []:
+        for s in ex.get("sets") or []:
+            try:
+                tonnage += float(s.get("reps", 0) or 0) * float(s.get("kg", 0) or 0)
+            except (TypeError, ValueError):
+                continue
+
+    # ─── kcal_total ──────────────────────────────────────────────────────
+    if avg_hr and profile and duration_min:
+        kcal = _keytel_kcal(
+            hr=avg_hr,
+            weight=profile.weight_kg,
+            age=profile.age,
+            gender=profile.gender,
+            duration_min=duration_min,
+        )
+        intensity = tonnage / duration_min if duration_min else 0.0
+        if intensity > 150:
+            kcal *= 1.08
+        elif intensity > 80:
+            kcal *= 1.04
+    elif duration_min:
+        weight_factor = (profile.weight_kg / 70.0) if profile else 1.0
+        kcal = 5.0 * weight_factor * duration_min + tonnage / 100.0
+    else:
+        # No duration — rough tonnage-only estimate (~45 kg lifted ≈ 1 kcal).
+        kcal = tonnage / 45.0
+
+    kcal_total = round(max(0.0, kcal), 1)
+
+    # ─── fat split (strength leans on glycogen) ──────────────────────────
+    if avg_hr and profile:
+        hr_max = max(120, 220 - profile.age)
+        pct = avg_hr / hr_max
+        if pct < 0.60:
+            fat_pct = 55.0
+        elif pct < 0.70:
+            fat_pct = 45.0
+        elif pct < 0.80:
+            fat_pct = 35.0
+        else:
+            fat_pct = 25.0
+    else:
+        fat_pct = 40.0
+    carb_pct = 100.0 - fat_pct
+    fat_grams = round(kcal_total * fat_pct / 100.0 / 9.0, 2)
+
+    # ─── EPOC (strength > cardio) ────────────────────────────────────────
+    if tonnage > 5000:
+        epoc_pct = 0.15
+    elif tonnage > 2000:
+        epoc_pct = 0.10
+    else:
+        epoc_pct = 0.06
+    kcal_epoc = round(kcal_total * epoc_pct, 1)
+
+    note = (
+        ""
+        if skip_note
+        else await _strength_analysis_note(
+            label=label,
+            duration_min=duration_min,
+            kcal_total=kcal_total,
+            fat_grams=fat_grams,
+            kcal_epoc=kcal_epoc,
+            tonnage=tonnage,
+            supabase=supabase,
+        )
+    )
+
+    return {
+        "kcal_total": kcal_total,
+        "kcal_epoc": kcal_epoc,
+        "fat_pct": round(fat_pct, 1),
+        "carb_pct": round(carb_pct, 1),
+        "fat_grams": fat_grams,
+        "analysis_note": note,
+    }
+
+
 __all__ = [
     "SYSTEM_PROMPT",
+    "analyze_strength_kcal",
     "chat_stream",
     "generate_weekly_report",
     "parse_exercise",

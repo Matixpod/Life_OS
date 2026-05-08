@@ -1,4 +1,4 @@
-import { CalendarDays, Dumbbell, Flame, Library } from 'lucide-react';
+import { CalendarDays, Dumbbell, Flame, Heart, Library } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { prometheusApi } from '../../api/prometheus';
 import {
@@ -8,6 +8,7 @@ import {
   type RecoveryMap,
 } from '../../types/prometheus';
 import BodyMap from './BodyMap';
+import CardioTab from './cardio/CardioTab';
 import ExerciseInput from './ExerciseInput';
 import ExerciseLibrary from './ExerciseLibrary';
 import MuscleRecoveryBar from './MuscleRecoveryBar';
@@ -17,13 +18,14 @@ import WeekView from './WeekView';
 import WorkoutBuilder from './WorkoutBuilder';
 import WorkoutLog from './WorkoutLog';
 
-type Tab = 'training' | 'week' | 'prometheus' | 'library';
+type Tab = 'training' | 'week' | 'prometheus' | 'library' | 'cardio';
 type InputMode = 'text' | 'library';
 
 const TABS: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
   { id: 'training', label: 'Trening', icon: Dumbbell },
   { id: 'week', label: 'Tygodnik', icon: CalendarDays },
   { id: 'prometheus', label: 'PROMETHEUS', icon: Flame },
+  { id: 'cardio', label: 'Cardio', icon: Heart },
   { id: 'library', label: 'Biblioteka', icon: Library },
 ];
 
@@ -230,6 +232,8 @@ export default function PrometheusPage() {
         </div>
       ) : tab === 'library' ? (
         <ExerciseLibrary />
+      ) : tab === 'cardio' ? (
+        <CardioTab />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
           <WeeklyReportView />

@@ -25,6 +25,7 @@ import type {
   TaskUpdatePayload,
   UserProfile,
   WeeklyTaskList,
+  WorkoutCompleteMeta,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
@@ -194,8 +195,11 @@ export const api = {
   updateTaskV2: (id: string, payload: TaskUpdatePayload) =>
     patchJson<Task>(`/api/v1/tasks/${id}`, payload),
   deleteTaskV2: (id: string) => deleteVoid(`/api/v1/tasks/${id}`),
-  completeTaskV2: (id: string) =>
-    postJson<TaskCompletionResult>(`/api/v1/tasks/${id}/complete`, {}),
+  completeTaskV2: (id: string, meta?: WorkoutCompleteMeta) =>
+    postJson<TaskCompletionResult>(
+      `/api/v1/tasks/${id}/complete`,
+      meta ?? {},
+    ),
   uncompleteTaskV2: (id: string) =>
     postJson<Task>(`/api/v1/tasks/${id}/uncomplete`, {}),
   skipTaskV2: (id: string) => postJson<Task>(`/api/v1/tasks/${id}/skip`, {}),

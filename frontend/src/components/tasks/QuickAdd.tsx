@@ -1,15 +1,16 @@
-import { Crown, Leaf, Plus } from 'lucide-react';
+import { Clock, Crown, Leaf, Plus } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { habitsApi } from '../../api/habits';
 import { projectsApi } from '../../api/projects';
 import { useKeyboardShortcut } from '../../hooks/useKeyboardShortcut';
 import { useTasks } from '../../hooks/useTasks';
 import type { DayPart, ProjectV2, TaskCategory, TaskPriority } from '../../types';
+import { previewApCost } from '../../utils/apCost';
 import HabitRecurrenceSelector, {
   type HabitRecurrenceValue,
 } from '../habits/HabitRecurrenceSelector';
 import DayPartTimePicker from '../ui/DayPartTimePicker';
-import DurationChips from '../ui/DurationChips';
+import DurationPickerModal, { labelForMinutes } from '../ui/DurationPickerModal';
 import { CATEGORIES, CATEGORY_META, PRIORITY_BORDER, PRIORITY_LABEL } from './categories';
 
 const PRIORITIES: TaskPriority[] = ['low', 'medium', 'high'];
@@ -17,6 +18,10 @@ type AddType = 'task' | 'habit' | 'project_task';
 
 interface Props {
   onCreated?: () => void;
+  /** ISO date (YYYY-MM-DD) the new task should be scheduled for.
+      Defaults to today. Used by the calendar day view to add tasks
+      to past or future days. */
+  defaultDate?: string;
 }
 
 /**
@@ -25,7 +30,7 @@ interface Props {
  * a shake animation. The type switcher controls whether we create a task,
  * a habit, or a project task.
  */
-export default function QuickAdd({ onCreated }: Props = {}) {
+export default function QuickAdd({ onCreated, defaultDate }: Props = {}) {
   const tasks = useTasks();
   const [type, setType] = useState<AddType>('task');
   const [title, setTitle] = useState('');
@@ -47,6 +52,7 @@ export default function QuickAdd({ onCreated }: Props = {}) {
   const [submitting, setSubmitting] = useState(false);
   const [shake, setShake] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useKeyboardShortcut('n', () => inputRef.current?.focus());
@@ -63,6 +69,7 @@ export default function QuickAdd({ onCreated }: Props = {}) {
   }, [type, projects.length, projectId]);
 
   const today = new Date().toISOString().slice(0, 10);
+  const targetDate = defaultDate ?? today;
 
   const hasMainQuestToday = useMemo(
     () => Boolean(tasks.today?.tasks.some((t) => t.is_main_quest && t.status !== 'skipped')),
@@ -81,19 +88,13 @@ export default function QuickAdd({ onCreated }: Props = {}) {
     setSubmitting(true);
     try {
       if (type === 'task') {
-        // Prefer the drum-roll picker value if set; fall back to the
-        // legacy `min` text input (still useful for keyboard-only flows).
         const minutes =
-          durationMin > 0
-            ? Math.max(5, Math.min(480, durationMin))
-            : estimatedMin
-              ? Math.max(5, Math.min(480, Number(estimatedMin)))
-              : null;
+          durationMin > 0 ? Math.max(5, Math.min(480, durationMin)) : null;
         await tasks.createTask({
           title: trimmed,
           category,
           priority,
-          scheduled_date: today,
+          scheduled_date: targetDate,
           estimated_minutes: minutes,
           is_main_quest: isMainQuest,
           is_regenerative: isRegenerative,
@@ -171,13 +172,17 @@ export default function QuickAdd({ onCreated }: Props = {}) {
               inputRef.current?.blur();
             }
           }}
-          placeholder="Dodaj… (N aby zaznaczyć)"
+          placeholder={
+            defaultDate && defaultDate !== today
+              ? `Dodaj do ${targetDate}…`
+              : 'Dodaj… (N aby zaznaczyć)'
+          }
           aria-label="New title"
           className={`flex-1 bg-transparent border-0 focus:outline-none focus:ring-0 text-sm placeholder:text-muted py-2 px-2 rounded-md ${
             shake ? 'animate-shake border border-accent-red/60' : ''
           }`}
         />
-        {type !== 'habit' && (
+        {type === 'project_task' && (
           <input
             type="number"
             min={5}
@@ -259,7 +264,18 @@ export default function QuickAdd({ onCreated }: Props = {}) {
 
       {type === 'task' && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <DurationChips value={durationMin} onChange={setDurationMin} />
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            aria-haspopup="dialog"
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition-colors ${
+              durationMin > 0
+                ? 'border-amber-400/60 bg-amber-400/10 text-amber-300'
+                : 'border-border bg-transparent text-muted hover:text-white'
+            }`}
+          >
+            <Clock size={11} /> Czas: {durationMin > 0 ? labelForMinutes(durationMin) : '—'}
+          </button>
           <button
             type="button"
             onClick={() => setIsRegenerative((v) => !v)}
@@ -300,8 +316,8 @@ export default function QuickAdd({ onCreated }: Props = {}) {
               }`}
             >
               {isRegenerative
-                ? `Zwrot: +${durationMin} AP`
-                : `Koszt: -${durationMin} AP`}
+                ? `Zwrot: +${previewApCost(durationMin, priority, true)} AP`
+                : `Koszt: -${previewApCost(durationMin, priority, false)} AP`}
             </span>
           )}
         </div>
@@ -362,6 +378,16 @@ export default function QuickAdd({ onCreated }: Props = {}) {
       )}
 
       {error && <div className="text-[11px] text-accent-red">{error}</div>}
+
+      <DurationPickerModal
+        open={pickerOpen}
+        value={durationMin}
+        onChange={(m) => {
+          setDurationMin(m);
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }

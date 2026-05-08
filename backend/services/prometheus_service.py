@@ -122,13 +122,15 @@ def get_last_sets_for_exercise(
 # ─── Sessions ─────────────────────────────────────────────────────────────────
 
 
-def create_session(supabase: Client, payload: SessionCreate) -> dict:
+async def create_session(supabase: Client, payload: SessionCreate) -> dict:
     user_id = get_user_id(supabase)
     session_record = {
         "user_id": user_id,
         "date": str(payload.date),
         "label": payload.label or "",
         "notes": payload.notes,
+        "duration_min": payload.duration_min,
+        "avg_hr": payload.avg_hr,
     }
     session_res = (
         supabase.table(config.TABLE_PROMETHEUS_SESSIONS)
@@ -141,6 +143,7 @@ def create_session(supabase: Client, payload: SessionCreate) -> dict:
     session_id = session["id"]
 
     aggregated_muscles: dict[str, float] = {}
+    inserted_exercises: list[dict] = []
     if payload.exercises:
         ex_rows = []
         for idx, ex in enumerate(payload.exercises):
@@ -172,7 +175,8 @@ def create_session(supabase: Client, payload: SessionCreate) -> dict:
             .insert(ex_rows)
             .execute()
         )
-        session["exercises"] = ex_res.data or []
+        inserted_exercises = ex_res.data or []
+        session["exercises"] = inserted_exercises
     else:
         session["exercises"] = []
 
@@ -185,11 +189,60 @@ def create_session(supabase: Client, payload: SessionCreate) -> dict:
                 "type": "strength",
                 "label": payload.label or "Trening",
                 "muscle_groups": list(aggregated_muscles.keys()),
-                "duration_minutes": None,
+                "duration_minutes": payload.duration_min,
             }
         ).execute()
     except Exception:
         pass
+
+    # ── Strength kcal analysis ─────────────────────────────────────────
+    # Runs whenever the session has exercises or a logged duration. The
+    # agent's tonnage-only branch handles the no-duration case so fat_grams
+    # always lands in the jar. AI-written `analysis_note` is skipped when no
+    # duration was supplied — keeps quick text-input saves cheap.
+    has_exercises = bool(payload.exercises)
+    if payload.duration_min is not None or has_exercises:
+        try:
+            from agents.prometheus import agent as prometheus_agent
+            from models.schemas import CardioProfile
+            from services import cardio_service
+
+            profile_row = cardio_service.get_profile(supabase)
+            profile = CardioProfile(**profile_row) if profile_row else None
+            kcal_result = await prometheus_agent.analyze_strength_kcal(
+                duration_min=payload.duration_min,
+                avg_hr=payload.avg_hr,
+                label=payload.label or "Trening",
+                exercises=[
+                    {
+                        "name": ex.exercise_name,
+                        "sets": [s.model_dump() for s in ex.sets],
+                    }
+                    for ex in (payload.exercises or [])
+                ],
+                profile=profile,
+                supabase=supabase,
+                skip_note=payload.duration_min is None,
+            )
+            update = {
+                "kcal_total": kcal_result["kcal_total"],
+                "kcal_epoc": kcal_result["kcal_epoc"],
+                "fat_pct": kcal_result["fat_pct"],
+                "carb_pct": kcal_result["carb_pct"],
+                "fat_grams": kcal_result["fat_grams"],
+                "analysis_note": kcal_result["analysis_note"],
+            }
+            (
+                supabase.table(config.TABLE_PROMETHEUS_SESSIONS)
+                .update(update)
+                .eq("id", session_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+            session.update(update)
+        except Exception:
+            # Non-fatal: the session is already saved; kcal stays null.
+            pass
 
     return session
 

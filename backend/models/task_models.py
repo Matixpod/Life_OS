@@ -94,6 +94,8 @@ class TaskCreate(BaseModel):
     is_regenerative: bool = False
     start_time: time | None = None
     day_part: DayPart | None = None
+    task_type: Literal["task", "habit_entry", "project_task", "workout"] = "task"
+    workout_template_label: str | None = Field(default=None, max_length=200)
 
 
 class TaskUpdate(BaseModel):
@@ -137,14 +139,25 @@ class Task(BaseModel):
     estimated_minutes: int | None = None
     notes: str | None = None
     created_at: datetime
-    task_type: Literal["task", "habit_entry", "project_task"] = "task"
+    task_type: Literal["task", "habit_entry", "project_task", "workout"] = "task"
     habit_id: str | None = None
     project_task_id: str | None = None
+    workout_template_label: str | None = None
     is_main_quest: bool = False
     is_regenerative: bool = False
     ap_cost: int | None = None  # generated column: equals estimated_minutes
     start_time: time | None = None
     day_part: DayPart | None = None
+
+
+class WorkoutCompleteMeta(BaseModel):
+    """Optional payload for `POST /tasks/{id}/complete` when finishing a
+    `task_type='workout'` task. Both fields feed into PROMETHEUS so the
+    generated session can compute kcal / EPOC / fat_grams.
+    """
+
+    duration_min: int | None = Field(default=None, ge=1, le=300)
+    avg_hr: int | None = Field(default=None, ge=40, le=220)
 
 
 # ─── Aggregations ────────────────────────────────────────────────────────────

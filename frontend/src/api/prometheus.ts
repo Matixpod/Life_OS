@@ -1,7 +1,11 @@
 import type {
+  CardioProfile,
+  CardioSession,
+  CardioSessionCreate,
   ChatMessage,
   Exercise,
   ExerciseSet,
+  FatSummary,
   GymSession,
   ParsedExercise,
   RecoveryMap,
@@ -36,6 +40,16 @@ async function patchJson<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`PATCH ${path} → ${res.status}`);
+  return (await res.json()) as T;
+}
+
+async function putJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`PUT ${path} → ${res.status}`);
   return (await res.json()) as T;
 }
 
@@ -127,4 +141,27 @@ export const prometheusApi = {
 
   updateSession: (id: string, payload: SessionUpdatePayload): Promise<GymSession> =>
     patchJson<GymSession>(`${ROOT}/sessions/${id}`, payload),
+
+  // ─── Cardio ──────────────────────────────────────────────────────────
+  getCardioProfile: async (): Promise<CardioProfile | null> => {
+    const res = await fetch(`${BASE_URL}${ROOT}/cardio/profile`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`GET /cardio/profile → ${res.status}`);
+    return (await res.json()) as CardioProfile;
+  },
+
+  upsertCardioProfile: (profile: CardioProfile): Promise<CardioProfile> =>
+    putJson<CardioProfile>(`${ROOT}/cardio/profile`, profile),
+
+  createCardioSession: (payload: CardioSessionCreate): Promise<CardioSession> =>
+    postJson<CardioSession>(`${ROOT}/cardio/sessions`, payload),
+
+  getCardioSessions: (daysBack = 90): Promise<CardioSession[]> =>
+    getJson<CardioSession[]>(`${ROOT}/cardio/sessions?days_back=${daysBack}`),
+
+  deleteCardioSession: (id: string): Promise<void> =>
+    delVoid(`${ROOT}/cardio/sessions/${id}`),
+
+  getCardioSummary: (): Promise<FatSummary> =>
+    getJson<FatSummary>(`${ROOT}/cardio/summary`),
 };

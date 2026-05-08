@@ -14,7 +14,11 @@ from supabase import Client
 from agents.prometheus import agent as prometheus_agent
 from core.supabase_client import get_supabase
 from models.schemas import (
+    CardioProfile,
+    CardioSessionCreate,
+    CardioSessionResult,
     ExerciseCreate,
+    FatSummary,
     LastSetsResponse,
     ParseExerciseRequest,
     ParseExerciseResponse,
@@ -22,7 +26,7 @@ from models.schemas import (
     SessionCreate,
     SessionUpdate,
 )
-from services import prometheus_service
+from services import cardio_service, prometheus_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/prometheus", tags=["prometheus"])
@@ -116,7 +120,7 @@ async def create_session(
     supabase: Client = Depends(get_supabase),
 ) -> dict:
     try:
-        return prometheus_service.create_session(supabase, payload)
+        return await prometheus_service.create_session(supabase, payload)
     except Exception as e:
         logger.exception("prometheus.sessions.create error")
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -285,6 +289,95 @@ async def generate_report(
         yield _sse({"done": True, "report": report, "week_start": str(week_start)})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+# ─── Cardio ───────────────────────────────────────────────────────────────────
+
+
+@router.get("/cardio/profile", response_model=CardioProfile | None)
+async def get_cardio_profile(
+    supabase: Client = Depends(get_supabase),
+) -> CardioProfile | None:
+    try:
+        row = cardio_service.get_profile(supabase)
+    except Exception as e:
+        logger.exception("prometheus.cardio.profile.get error")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    if not row:
+        raise HTTPException(status_code=404, detail="Profile not set")
+    return CardioProfile(**row)
+
+
+@router.put("/cardio/profile", response_model=CardioProfile)
+async def upsert_cardio_profile(
+    payload: CardioProfile,
+    supabase: Client = Depends(get_supabase),
+) -> CardioProfile:
+    try:
+        row = cardio_service.upsert_profile(supabase, payload)
+    except Exception as e:
+        logger.exception("prometheus.cardio.profile.upsert error")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    return CardioProfile(**row)
+
+
+@router.post(
+    "/cardio/sessions", status_code=201, response_model=CardioSessionResult
+)
+async def create_cardio_session(
+    payload: CardioSessionCreate,
+    supabase: Client = Depends(get_supabase),
+) -> CardioSessionResult:
+    if payload.activity_type not in {
+        "treadmill", "running", "bike", "elliptical",
+        "swimming", "rowing", "hiit", "other",
+    }:
+        raise HTTPException(status_code=400, detail="Unknown activity_type")
+    try:
+        row = await cardio_service.create_session(supabase, payload)
+    except Exception as e:
+        logger.exception("prometheus.cardio.sessions.create error")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    return CardioSessionResult(**row)
+
+
+@router.get("/cardio/sessions", response_model=list[CardioSessionResult])
+async def list_cardio_sessions(
+    days_back: int = Query(default=90, ge=1, le=365),
+    supabase: Client = Depends(get_supabase),
+) -> list[CardioSessionResult]:
+    try:
+        rows = cardio_service.get_sessions(supabase, days_back=days_back)
+    except Exception as e:
+        logger.exception("prometheus.cardio.sessions.list error")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    return [CardioSessionResult(**r) for r in rows]
+
+
+@router.delete("/cardio/sessions/{session_id}", status_code=204)
+async def delete_cardio_session(
+    session_id: str,
+    supabase: Client = Depends(get_supabase),
+) -> Response:
+    try:
+        deleted = cardio_service.delete_session(supabase, session_id)
+    except Exception as e:
+        logger.exception("prometheus.cardio.sessions.delete error")
+        raise HTTPException(status_code=500, detail=str(e)) from e
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Cardio session not found")
+    return Response(status_code=204)
+
+
+@router.get("/cardio/summary", response_model=FatSummary)
+async def get_cardio_summary(
+    supabase: Client = Depends(get_supabase),
+) -> FatSummary:
+    try:
+        return FatSummary(**cardio_service.get_fat_summary(supabase))
+    except Exception as e:
+        logger.exception("prometheus.cardio.summary error")
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 __all__ = ["router"]

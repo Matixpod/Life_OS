@@ -351,9 +351,10 @@ export interface Task {
   estimated_minutes: number | null;
   notes: string | null;
   created_at: string;
-  task_type?: 'task' | 'habit_entry' | 'project_task';
+  task_type?: 'task' | 'habit_entry' | 'project_task' | 'workout';
   habit_id?: string | null;
   project_task_id?: string | null;
+  workout_template_label?: string | null;
   is_main_quest?: boolean;
   is_regenerative?: boolean;
   ap_cost?: number | null;
@@ -372,6 +373,13 @@ export interface TaskCreatePayload {
   is_regenerative?: boolean;
   start_time?: string | null;
   day_part?: DayPart | null;
+  task_type?: 'task' | 'habit_entry' | 'project_task' | 'workout';
+  workout_template_label?: string | null;
+}
+
+export interface WorkoutCompleteMeta {
+  duration_min?: number;
+  avg_hr?: number;
 }
 
 export interface TaskUpdatePayload {
@@ -739,7 +747,7 @@ export interface ProposalApproveResult {
   habit_id: string | null;
 }
 
-export type CalendarItemType = 'task' | 'habit_entry' | 'project_task';
+export type CalendarItemType = 'task' | 'habit_entry' | 'project_task' | 'workout';
 
 export interface CalendarItem {
   id: string;

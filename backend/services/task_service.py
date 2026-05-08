@@ -32,6 +32,7 @@ from models.task_models import (
     TaskPriority,
     TaskUpdate,
     WeeklyTaskList,
+    WorkoutCompleteMeta,
 )
 from services.xp_engine import compute_xp
 
@@ -96,6 +97,7 @@ def _row_to_task(row: dict) -> Task:
         task_type=row.get("task_type") or "task",
         habit_id=row.get("habit_id"),
         project_task_id=row.get("project_task_id"),
+        workout_template_label=row.get("workout_template_label"),
         is_main_quest=bool(row.get("is_main_quest")),
         is_regenerative=bool(row.get("is_regenerative")),
         ap_cost=row.get("ap_cost"),
@@ -169,6 +171,8 @@ def create_task(supabase: Client, payload: TaskCreate) -> Task:
         "is_regenerative": payload.is_regenerative,
         "start_time": payload.start_time.isoformat() if payload.start_time else None,
         "day_part": inferred_part,
+        "task_type": payload.task_type,
+        "workout_template_label": payload.workout_template_label,
     }
     # `daily_tasks.date` is currently NOT NULL (migration 003). When the
     # column is later relaxed to support backlog, omitting `date` here
@@ -234,7 +238,12 @@ def update_task(supabase: Client, task_id: str, payload: TaskUpdate) -> Task:
     return _row_to_task(res.data[0] if res.data else {**row, **update})
 
 
-def complete_task(supabase: Client, task_id: str) -> TaskCompletionResult:
+async def complete_task(
+    supabase: Client,
+    task_id: str,
+    *,
+    workout_meta: WorkoutCompleteMeta | None = None,
+) -> TaskCompletionResult:
     user_id = get_user_id(supabase)
     row = _fetch_owned_row(supabase, task_id, user_id)
     if not row:
@@ -270,6 +279,23 @@ def complete_task(supabase: Client, task_id: str) -> TaskCompletionResult:
     # because it goes through the same code path KRONOS uses.
     post_streak = _streak_for_category(supabase, cat_raw)
 
+    # Workout daily-task → spawn a PROMETHEUS session by copying exercises
+    # from the most recent strength session sharing this label. Best-effort:
+    # any failure is swallowed so the task still ends up as `done`.
+    if updated.get("task_type") == "workout":
+        label = updated.get("workout_template_label") or row.get("title") or ""
+        try:
+            await _auto_create_session_from_label(
+                supabase,
+                label=str(label),
+                session_date=str(updated.get("date") or row.get("date") or ""),
+                duration_min=workout_meta.duration_min if workout_meta else None,
+                avg_hr=workout_meta.avg_hr if workout_meta else None,
+            )
+        except Exception:
+            # Silent — completion already committed.
+            pass
+
     return TaskCompletionResult(
         task=task,
         xp_earned=xp_earned,
@@ -277,6 +303,95 @@ def complete_task(supabase: Client, task_id: str) -> TaskCompletionResult:
         new_streak=post_streak,
         bonus_reasons=bonus_reasons,
     )
+
+
+async def _auto_create_session_from_label(
+    supabase: Client,
+    *,
+    label: str,
+    session_date: str,
+    duration_min: int | None,
+    avg_hr: int | None,
+) -> None:
+    """Create a `prometheus_session` from the most recent matching session.
+
+    Resolution: look up the latest `prometheus_session` for this user with
+    the same `label`, copy its exercises (and their last-recorded sets),
+    and insert as a new session — with the user-supplied `duration_min` /
+    `avg_hr` so the kcal analyser runs.
+
+    If no historical session matches, we still create an empty session
+    (label + duration + HR) so the user gets kcal numbers; PROMETHEUS will
+    just have nothing to copy from.
+    """
+    from datetime import date as _DateType
+
+    # Local imports to keep `task_service` side of the dependency graph
+    # lazy — avoids circular import via prometheus_service → cardio.
+    from models.schemas import (
+        ExerciseSet,
+        SessionCreate,
+        SessionExerciseCreate,
+    )
+    from services import prometheus_service
+
+    if not label:
+        return
+
+    user_id = get_user_id(supabase)
+    sess_res = (
+        supabase.table(config.TABLE_PROMETHEUS_SESSIONS)
+        .select("id, created_at")
+        .eq("user_id", user_id)
+        .eq("label", label)
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    exercises: list[SessionExerciseCreate] = []
+    template_session = (sess_res.data or [None])[0]
+    if template_session:
+        ex_res = (
+            supabase.table(config.TABLE_PROMETHEUS_SESSION_EXES)
+            .select("exercise_name, sets, muscle_load, order_index")
+            .eq("session_id", template_session["id"])
+            .order("order_index")
+            .execute()
+        )
+        for ex in ex_res.data or []:
+            sets: list[ExerciseSet] = []
+            for s in ex.get("sets") or []:
+                try:
+                    sets.append(
+                        ExerciseSet(
+                            reps=int(s.get("reps", 0) or 0),
+                            kg=float(s.get("kg", 0.0) or 0.0),
+                        )
+                    )
+                except (TypeError, ValueError):
+                    continue
+            exercises.append(
+                SessionExerciseCreate(
+                    exercise_name=ex.get("exercise_name") or "Ćwiczenie",
+                    sets=sets,
+                    muscle_load=ex.get("muscle_load") or {},
+                )
+            )
+
+    try:
+        target_date = _DateType.fromisoformat(session_date)
+    except (TypeError, ValueError):
+        target_date = _DateType.today()
+
+    payload = SessionCreate(
+        date=target_date,
+        label=label,
+        exercises=exercises,
+        duration_min=duration_min,
+        avg_hr=avg_hr,
+    )
+    await prometheus_service.create_session(supabase, payload)
 
 
 def uncomplete_task(supabase: Client, task_id: str) -> Task:

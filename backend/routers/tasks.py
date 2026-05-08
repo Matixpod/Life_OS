@@ -24,6 +24,7 @@ from models.task_models import (
     TaskCreate,
     TaskUpdate,
     WeeklyTaskList,
+    WorkoutCompleteMeta,
 )
 from services import task_service
 from services.task_service import TaskAlreadyDone, TaskNotFound, TaskSkipped
@@ -156,10 +157,13 @@ async def delete_task(
 async def complete_task_route(
     task_id: str,
     background: BackgroundTasks,
+    meta: WorkoutCompleteMeta | None = None,
     supabase: Client = Depends(get_supabase),
 ) -> TaskCompletionResult:
     try:
-        result = task_service.complete_task(supabase, task_id)
+        result = await task_service.complete_task(
+            supabase, task_id, workout_meta=meta
+        )
     except TaskNotFound:
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
     except TaskAlreadyDone:

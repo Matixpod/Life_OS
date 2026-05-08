@@ -1,4 +1,4 @@
-import { Leaf, Save, X } from 'lucide-react';
+import { Clock, Leaf, Save, X } from 'lucide-react';
 import { useState } from 'react';
 import { habitsApi } from '../../api/habits';
 import type {
@@ -9,9 +9,10 @@ import type {
   TaskCategory,
   TaskPriority,
 } from '../../types';
+import { previewApCost } from '../../utils/apCost';
 import { CATEGORIES, CATEGORY_META, PRIORITY_BORDER, PRIORITY_LABEL } from '../tasks/categories';
 import DayPartTimePicker from '../ui/DayPartTimePicker';
-import DurationChips from '../ui/DurationChips';
+import DurationPickerModal, { labelForMinutes } from '../ui/DurationPickerModal';
 import HabitRecurrenceSelector, { type HabitRecurrenceValue } from './HabitRecurrenceSelector';
 
 interface Props {
@@ -38,6 +39,7 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
   const [dayPart, setDayPart] = useState<DayPart | null>(initial?.day_part ?? null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   async function submit(): Promise<void> {
     const trimmed = title.trim();
@@ -164,7 +166,18 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
       <HabitRecurrenceSelector value={recurrence} onChange={setRecurrence} />
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <DurationChips value={durationMin} onChange={setDurationMin} />
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          aria-haspopup="dialog"
+          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition-colors ${
+            durationMin > 0
+              ? 'border-amber-400/60 bg-amber-400/10 text-amber-300'
+              : 'border-border bg-transparent text-muted hover:text-white'
+          }`}
+        >
+          <Clock size={11} /> Czas: {durationMin > 0 ? labelForMinutes(durationMin) : '—'}
+        </button>
         <button
           type="button"
           onClick={() => setIsRegenerative((v) => !v)}
@@ -184,8 +197,8 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
             }`}
           >
             {isRegenerative
-              ? `Zwrot: +${durationMin} AP`
-              : `Koszt: -${durationMin} AP`}
+              ? `Zwrot: +${previewApCost(durationMin, priority, true)} AP`
+              : `Koszt: -${previewApCost(durationMin, priority, false)} AP`}
           </span>
         )}
       </div>
@@ -211,6 +224,16 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
           <Save size={12} /> Zapisz
         </button>
       </div>
+
+      <DurationPickerModal
+        open={pickerOpen}
+        value={durationMin}
+        onChange={(m) => {
+          setDurationMin(m);
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 }

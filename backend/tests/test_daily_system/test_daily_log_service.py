@@ -103,7 +103,15 @@ def _seed_task(
     status: str,
     is_regen: bool = False,
     title: str = "task",
+    ap_cost: int | None = None,
 ) -> None:
+    """Seed a fake daily_tasks row.
+
+    `ap_cost` mimics the priority-weighted Postgres generated column
+    (migration 013). Pass it explicitly to test priority-weighted math;
+    leave it None to exercise the legacy fallback path that the service
+    keeps for rows pre-dating the generated column.
+    """
     fake.tables["daily_tasks"].append(
         {
             "id": f"task-{len(fake.tables['daily_tasks'])}",
@@ -113,6 +121,7 @@ def _seed_task(
             "status": status,
             "estimated_minutes": minutes,
             "is_regenerative": is_regen,
+            "ap_cost": ap_cost,
         }
     )
 
@@ -163,6 +172,41 @@ def test_status_floor_at_zero(fake_supabase: FakeSupabase) -> None:
     status = daily_log_service.get_stamina_status(fake_supabase)
     # Without flooring this would be -120; service must clamp at 0.
     assert status.ap_available == 0
+
+
+# ─── priority-weighted ap_cost (migration 013) ───────────────────────────────
+
+
+def test_status_high_priority_amplifies_drain(fake_supabase: FakeSupabase) -> None:
+    """HIGH priority 60-min task drains 90 AP (1.5× multiplier)."""
+    _seed_log(fake_supabase, 70, 70)  # pool = 420
+    _seed_task(fake_supabase, minutes=60, status="done", ap_cost=90)
+    status = daily_log_service.get_stamina_status(fake_supabase)
+    assert status.ap_used == 90
+    assert status.ap_available == 420 - 90
+
+
+def test_status_low_priority_softens_drain(fake_supabase: FakeSupabase) -> None:
+    """LOW priority 60-min task drains 42 AP (0.7× multiplier)."""
+    _seed_log(fake_supabase, 70, 70)
+    _seed_task(fake_supabase, minutes=60, status="done", ap_cost=42)
+    status = daily_log_service.get_stamina_status(fake_supabase)
+    assert status.ap_used == 42
+    assert status.ap_available == 420 - 42
+
+
+def test_status_regenerative_ignores_priority(fake_supabase: FakeSupabase) -> None:
+    """Regenerative tasks skip the multiplier — ap_cost equals raw minutes
+    even when priority would otherwise amplify."""
+    _seed_log(fake_supabase, 70, 70)
+    _seed_task(
+        fake_supabase, minutes=60, status="done", is_regen=True, ap_cost=60
+    )
+    status = daily_log_service.get_stamina_status(fake_supabase)
+    assert status.ap_restored == 60
+    assert status.ap_available == 420 + 60
+    # Sign-flipped negative cost in the breakdown.
+    assert status.tasks_breakdown[0].ap_cost == -60
 
 
 # ─── boosts ──────────────────────────────────────────────────────────────────

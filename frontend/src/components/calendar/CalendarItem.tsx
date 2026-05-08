@@ -1,4 +1,4 @@
-import { Check, Folder } from 'lucide-react';
+import { Check, Folder, Trash2 } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { projectsApi } from '../../api/projects';
 import { tasksApi } from '../../api/tasks';
 import type { CalendarItem as CalendarItemModel } from '../../types';
 import { CATEGORY_COLORS } from '../../types';
+import WorkoutCompleteModal from '../prometheus/WorkoutCompleteModal';
 import { PRIORITY_LABEL } from '../tasks/categories';
 
 interface Props {
@@ -18,20 +19,41 @@ interface Props {
 export default function CalendarItem({ item, compact = false, onToggled }: Props) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const isDone = item.status === 'done';
+  const isWorkout = item.type === 'workout';
   const color = item.category ? CATEGORY_COLORS[item.category].hex : '#475569';
 
   function handleClick(e: React.MouseEvent): void {
     const target = e.target as HTMLElement;
-    if (target.closest('button[data-checkbox]')) return;
+    if (target.closest('button[data-checkbox]') || target.closest('button[data-delete]')) return;
     navigate(item.agent_route, { state: { focusItemId: item.id, itemType: item.type } });
+  }
+
+  async function completeWorkoutWithMeta(
+    meta?: { duration_min?: number; avg_hr?: number },
+  ): Promise<void> {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await tasksApi.completeTask(item.id, meta);
+      onToggled?.();
+    } catch (e) {
+      console.error('Failed to complete workout', e);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleToggle(): Promise<void> {
     if (busy) return;
+    if (isWorkout && !isDone) {
+      setShowWorkoutModal(true);
+      return;
+    }
     setBusy(true);
     try {
-      if (item.type === 'task') {
+      if (item.type === 'task' || item.type === 'workout') {
         if (isDone) {
           await tasksApi.uncompleteTask(item.id);
         } else {
@@ -55,6 +77,28 @@ export default function CalendarItem({ item, compact = false, onToggled }: Props
       onToggled?.();
     } catch (e) {
       console.error('Failed to toggle item', e);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const canDelete =
+    item.type === 'task' || item.type === 'project_task' || item.type === 'workout';
+
+  async function handleDelete(e: React.MouseEvent): Promise<void> {
+    e.stopPropagation();
+    if (busy || !canDelete) return;
+    if (!window.confirm(`Usunąć „${item.title}"?`)) return;
+    setBusy(true);
+    try {
+      if (item.type === 'task' || item.type === 'workout') {
+        await tasksApi.deleteTask(item.id);
+      } else if (item.type === 'project_task') {
+        await projectsApi.deleteTask(item.id);
+      }
+      onToggled?.();
+    } catch (err) {
+      console.error('Failed to delete item', err);
     } finally {
       setBusy(false);
     }
@@ -119,6 +163,36 @@ export default function CalendarItem({ item, compact = false, onToggled }: Props
         <span className="shrink-0 inline-flex items-center justify-center rounded-md bg-surface2 px-2 py-1 font-mono text-[10px] text-muted">
           {PRIORITY_LABEL[item.priority]}
         </span>
+      )}
+      {canDelete && (
+        <button
+          data-delete="true"
+          type="button"
+          onClick={handleDelete}
+          disabled={busy}
+          aria-label="Usuń"
+          className="shrink-0 inline-flex items-center justify-center size-6 rounded-md text-muted opacity-0 transition-opacity hover:text-accent-red focus:opacity-100 group-hover:opacity-100 disabled:opacity-30"
+        >
+          <Trash2 size={13} />
+        </button>
+      )}
+      {showWorkoutModal && (
+        <WorkoutCompleteModal
+          taskTitle={item.title}
+          estimatedMinutes={60}
+          onConfirm={(duration, hr) => {
+            setShowWorkoutModal(false);
+            void completeWorkoutWithMeta({
+              duration_min: duration,
+              ...(hr != null ? { avg_hr: hr } : {}),
+            });
+          }}
+          onSkip={() => {
+            setShowWorkoutModal(false);
+            void completeWorkoutWithMeta();
+          }}
+          onCancel={() => setShowWorkoutModal(false)}
+        />
       )}
     </div>
   );

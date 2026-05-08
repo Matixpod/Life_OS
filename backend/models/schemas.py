@@ -262,6 +262,8 @@ class SessionCreate(BaseModel):
     label: str
     notes: str | None = None
     exercises: list[SessionExerciseCreate] = Field(default_factory=list)
+    duration_min: int | None = None
+    avg_hr: int | None = None
 
 
 class ParseExerciseRequest(BaseModel):
@@ -343,3 +345,76 @@ class SessionUpdate(BaseModel):
 
 class LastSetsResponse(BaseModel):
     sets: list[ExerciseSet] = Field(default_factory=list)
+
+
+# ─── PROMETHEUS Cardio System ─────────────────────────────────────────────────
+
+ACTIVITY_TYPES = (
+    "treadmill", "running", "bike", "elliptical",
+    "swimming", "rowing", "hiit", "other",
+)
+
+
+class CardioProfile(BaseModel):
+    """User biometrics for cardio kcal formulas. Loaded from the DB row —
+    extra fields (`id`, `user_id`, `updated_at`) are ignored."""
+
+    model_config = ConfigDict(extra="ignore")
+    gender: Literal["male", "female"]
+    weight_kg: float
+    age: int
+    vo2max: float | None = None
+    body_fat_pct: float | None = None
+
+
+class CardioSessionParams(BaseModel):
+    incline_pct: float | None = None
+    speed_kmh: float | None = None
+    distance_km: float | None = None
+    resistance: int | None = None
+    rpm: int | None = None
+    pool_length_m: int | None = None
+    laps: int | None = None
+    notes: str | None = None
+
+
+class CardioSessionCreate(BaseModel):
+    date: DateType
+    activity_type: str
+    label: str
+    duration_min: int = Field(ge=1, le=600)
+    avg_hr: int | None = Field(default=None, ge=30, le=240)
+    params: CardioSessionParams = Field(default_factory=CardioSessionParams)
+
+
+class CardioSessionResult(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    date: str
+    activity_type: str
+    label: str
+    duration_min: int
+    avg_hr: int | None = None
+    params: dict = Field(default_factory=dict)
+    kcal_total: float | None = None
+    kcal_epoc: float | None = None
+    fat_pct: float | None = None
+    carb_pct: float | None = None
+    fat_kcal: float | None = None
+    carb_kcal: float | None = None
+    fat_grams: float | None = None
+    hr_zone: str | None = None
+    analysis_note: str | None = None
+    created_at: str
+
+
+class FatSummary(BaseModel):
+    today_fat_grams: float
+    week_fat_grams: float
+    month_fat_grams: float
+    total_fat_grams: float
+    sessions_this_week: int
+    # Per-source split for the current week — lets the UI show "🏃 cardio
+    # X g · 🏋️ siłowo Y g" so the user can see strength is contributing.
+    week_cardio_grams: float = 0.0
+    week_strength_grams: float = 0.0

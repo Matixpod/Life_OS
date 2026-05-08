@@ -6,7 +6,7 @@ import CalendarItem from './CalendarItem';
 import ProposalCard from './ProposalCard';
 import { sortCalendarItems } from './dayPart';
 
-type Mode = 'day' | 'week' | 'month';
+export type CalendarMode = 'day' | 'week' | 'month';
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -38,16 +38,24 @@ function endOfMonth(iso: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-function isMobile(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(max-width: 767px)').matches;
-}
-
 const DOW_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
 
-export default function CalendarView() {
-  const [mode, setMode] = useState<Mode>(() => (isMobile() ? 'day' : 'week'));
-  const [anchor, setAnchor] = useState<string>(() => todayIso());
+interface CalendarViewProps {
+  mode: CalendarMode;
+  onModeChange: (mode: CalendarMode) => void;
+  anchor: string;
+  onAnchorChange: (iso: string) => void;
+  /** Bump this number to force a refetch (e.g. after QuickAdd creates a task). */
+  refreshKey?: number;
+}
+
+export default function CalendarView({
+  mode,
+  onModeChange,
+  anchor,
+  onAnchorChange,
+  refreshKey = 0,
+}: CalendarViewProps) {
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +85,7 @@ export default function CalendarView() {
     } finally {
       setLoading(false);
     }
-  }, [anchor, mode, range.end, range.start]);
+  }, [anchor, mode, range.end, range.start, refreshKey]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -85,11 +93,11 @@ export default function CalendarView() {
   }, [load]);
 
   function shift(delta: number): void {
-    if (mode === 'day') return setAnchor(addDays(anchor, delta));
-    if (mode === 'week') return setAnchor(addDays(anchor, delta * 7));
+    if (mode === 'day') return onAnchorChange(addDays(anchor, delta));
+    if (mode === 'week') return onAnchorChange(addDays(anchor, delta * 7));
     const d = new Date(anchor + 'T00:00:00Z');
     d.setUTCMonth(d.getUTCMonth() + delta);
-    setAnchor(d.toISOString().slice(0, 10));
+    onAnchorChange(d.toISOString().slice(0, 10));
   }
 
   function dropProposal(id: string): void {
@@ -103,11 +111,11 @@ export default function CalendarView() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex rounded-md border border-border bg-surface p-0.5">
-          {(['day', 'week', 'month'] as Mode[]).map((m) => (
+          {(['day', 'week', 'month'] as CalendarMode[]).map((m) => (
             <button
               key={m}
               type="button"
-              onClick={() => setMode(m)}
+              onClick={() => onModeChange(m)}
               className={`px-3 py-1 text-xs rounded-sm capitalize transition-colors ${
                 mode === m ? 'bg-surface2 text-white' : 'text-muted hover:text-white'
               }`}
@@ -128,7 +136,7 @@ export default function CalendarView() {
           </button>
           <button
             type="button"
-            onClick={() => setAnchor(todayIso())}
+            onClick={() => onAnchorChange(todayIso())}
             className="rounded-md border border-border bg-surface px-2 py-1 text-xs hover:text-white"
           >
             Dziś

@@ -7,6 +7,7 @@ import type {
   TaskListFilters,
   TaskUpdatePayload,
   WeeklyTaskList,
+  WorkoutCompleteMeta,
 } from '../types';
 
 /**
@@ -33,7 +34,10 @@ export const tasksApi = {
   updateTask: (id: string, payload: TaskUpdatePayload): Promise<Task> =>
     api.updateTaskV2(id, payload),
   deleteTask: (id: string): Promise<void> => api.deleteTaskV2(id),
-  completeTask: (id: string): Promise<TaskCompletionResult> => api.completeTaskV2(id),
+  completeTask: (
+    id: string,
+    meta?: WorkoutCompleteMeta,
+  ): Promise<TaskCompletionResult> => api.completeTaskV2(id, meta),
   uncompleteTask: (id: string): Promise<Task> => api.uncompleteTaskV2(id),
   skipTask: (id: string): Promise<Task> => api.skipTaskV2(id),
 };

@@ -78,9 +78,12 @@ export default function DailyView() {
     return out;
   }, [today, filter]);
 
-  async function handleComplete(task: Task): Promise<void> {
+  async function handleComplete(
+    task: Task,
+    workoutMeta?: { duration_min?: number; avg_hr?: number },
+  ): Promise<void> {
     try {
-      const result = await completeTask(task.id);
+      const result = await completeTask(task.id, workoutMeta);
       setPopup({ taskId: task.id, xp: result.xp_earned, reasons: result.bonus_reasons });
       emitCombatText(`+${result.xp_earned} XP`, 'xp');
       const minutes = task.estimated_minutes ?? 0;

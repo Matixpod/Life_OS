@@ -1,7 +1,8 @@
 import { Crown, Leaf, MoreHorizontal, Pencil, SkipForward, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import type { Task } from '../../types';
+import type { Task, WorkoutCompleteMeta } from '../../types';
+import WorkoutCompleteModal from '../prometheus/WorkoutCompleteModal';
 import { CATEGORY_META, PRIORITY_BORDER, PRIORITY_LABEL } from './categories';
 
 interface QuestCardProps {
@@ -12,7 +13,7 @@ interface QuestCardProps {
   isOverStamina?: boolean;
   /** When true, the card draws the diagonal-stripe decay overlay. */
   isDecayed?: boolean;
-  onComplete: (task: Task) => void;
+  onComplete: (task: Task, workoutMeta?: WorkoutCompleteMeta) => void;
   onUncomplete?: (task: Task) => void;
   onSkip?: (task: Task) => void;
   onDelete?: (task: Task) => void;
@@ -62,9 +63,11 @@ export default function QuestCard({
   onEdit,
 }: QuestCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showWorkoutModal, setShowWorkoutModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isDone = task.status === 'done';
   const isSkipped = task.status === 'skipped';
+  const isWorkout = task.task_type === 'workout';
   const meta = task.category ? CATEGORY_META[task.category] : null;
   const Icon = meta?.icon;
   const minutes = task.estimated_minutes ?? 0;
@@ -84,10 +87,14 @@ export default function QuestCard({
     if (isSkipped) return;
     if (isDone) {
       onUncomplete?.(task);
-    } else {
-      playChime(523.25); // C5 — task-complete chime
-      onComplete(task);
+      return;
     }
+    if (isWorkout) {
+      setShowWorkoutModal(true);
+      return;
+    }
+    playChime(523.25); // C5 — task-complete chime
+    onComplete(task);
   };
 
   // ─── Card-level visual modifiers ────────────────────────────────────────
@@ -208,6 +215,27 @@ export default function QuestCard({
             )}
           </div>
         </div>
+
+        {showWorkoutModal && (
+          <WorkoutCompleteModal
+            taskTitle={task.title}
+            estimatedMinutes={task.estimated_minutes ?? 60}
+            onConfirm={(duration, hr) => {
+              setShowWorkoutModal(false);
+              playChime(523.25);
+              onComplete(task, {
+                duration_min: duration,
+                ...(hr != null ? { avg_hr: hr } : {}),
+              });
+            }}
+            onSkip={() => {
+              setShowWorkoutModal(false);
+              playChime(523.25);
+              onComplete(task);
+            }}
+            onCancel={() => setShowWorkoutModal(false)}
+          />
+        )}
 
         {!isDone && (
           <div className="relative" ref={menuRef}>

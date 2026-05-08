@@ -188,6 +188,14 @@ export interface GymSession {
   notes?: string;
   exercises: SessionExercise[];
   created_at: string;
+  duration_min?: number | null;
+  avg_hr?: number | null;
+  kcal_total?: number | null;
+  kcal_epoc?: number | null;
+  fat_pct?: number | null;
+  carb_pct?: number | null;
+  fat_grams?: number | null;
+  analysis_note?: string | null;
 }
 
 export interface ParsedExercise {
@@ -208,6 +216,8 @@ export interface SessionCreate {
   label: string;
   notes?: string;
   exercises: SessionExerciseInput[];
+  duration_min?: number;
+  avg_hr?: number;
 }
 
 export interface SessionUpdatePayload {
@@ -235,4 +245,101 @@ export interface WeeklyReport {
   missed_muscles: MuscleKey[];
   next_week_plan: WeeklyReportDay[];
   prometheus_words: string;
+}
+
+// ─── Cardio ──────────────────────────────────────────────────────────────────
+
+export type HRZone = 'warm_up' | 'fat_burn' | 'aerobic' | 'anaerobic' | 'peak';
+
+export type ActivityType =
+  | 'treadmill' | 'running' | 'bike' | 'elliptical'
+  | 'swimming' | 'rowing' | 'hiit' | 'other';
+
+export const ACTIVITY_LABELS_PL: Record<ActivityType, string> = {
+  treadmill: 'Bieżnia',
+  running: 'Bieganie',
+  bike: 'Rower',
+  elliptical: 'Orbitrek',
+  swimming: 'Pływanie',
+  rowing: 'Wioślarstwo',
+  hiit: 'HIIT',
+  other: 'Inne',
+};
+
+export const HR_ZONE_META: Record<
+  HRZone,
+  { label: string; color: string; fatPct: number }
+> = {
+  warm_up: { label: 'Rozgrzewka', color: '#60A5FA', fatPct: 80 },
+  fat_burn: { label: 'Spalanie tłuszczu', color: '#34D399', fatPct: 70 },
+  aerobic: { label: 'Tlenowy', color: '#FBBF24', fatPct: 50 },
+  anaerobic: { label: 'Beztlenowy', color: '#F97316', fatPct: 30 },
+  peak: { label: 'Szczyt', color: '#EF4444', fatPct: 10 },
+};
+
+export interface CardioProfile {
+  gender: 'male' | 'female';
+  weight_kg: number;
+  age: number;
+  vo2max?: number;
+  body_fat_pct?: number;
+}
+
+export interface CardioSessionParams {
+  incline_pct?: number;
+  speed_kmh?: number;
+  distance_km?: number;
+  resistance?: number;
+  rpm?: number;
+  pool_length_m?: number;
+  laps?: number;
+  notes?: string;
+}
+
+export interface CardioSession {
+  id: string;
+  date: string;
+  activity_type: ActivityType;
+  label: string;
+  duration_min: number;
+  avg_hr?: number | null;
+  params: CardioSessionParams;
+  kcal_total?: number | null;
+  kcal_epoc?: number | null;
+  fat_pct?: number | null;
+  carb_pct?: number | null;
+  fat_kcal?: number | null;
+  carb_kcal?: number | null;
+  fat_grams?: number | null;
+  hr_zone?: HRZone | null;
+  analysis_note?: string | null;
+  created_at: string;
+}
+
+export interface CardioSessionCreate {
+  date: string;
+  activity_type: ActivityType;
+  label: string;
+  duration_min: number;
+  avg_hr?: number;
+  params: CardioSessionParams;
+}
+
+export interface FatSummary {
+  today_fat_grams: number;
+  week_fat_grams: number;
+  month_fat_grams: number;
+  total_fat_grams: number;
+  sessions_this_week: number;
+  week_cardio_grams?: number;
+  week_strength_grams?: number;
+}
+
+/** Returns a human-readable butter analogy for fat grams. */
+export function fatGramsAnalogy(grams: number): string {
+  if (grams < 5) return 'śladowe ilości';
+  if (grams < 12) return '≈ łyżeczka masła';
+  if (grams < 30) return `≈ ${Math.round((grams / 25) * 5) / 5} kostki masła`;
+  if (grams < 100) return `≈ ${(grams / 100).toFixed(1)} kostki masła`;
+  return `≈ ${(grams / 100).toFixed(1)} kostek masła`;
 }

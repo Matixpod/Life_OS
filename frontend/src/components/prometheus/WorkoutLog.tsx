@@ -1,5 +1,6 @@
-import { Dumbbell, Pencil, Trash2 } from 'lucide-react';
+import { CalendarPlus, Dumbbell, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { tasksApi } from '../../api/tasks';
 import { prometheusApi } from '../../api/prometheus';
 import type { GymSession } from '../../types/prometheus';
 import SessionEditModal from './SessionEditModal';
@@ -44,6 +45,37 @@ export default function WorkoutLog({ sessions, onChanged }: WorkoutLogProps) {
     }
   };
 
+  const schedule = async (s: GymSession): Promise<void> => {
+    const today = new Date();
+    const defaultDate = new Date(today.getTime() + 86_400_000) // tomorrow
+      .toISOString()
+      .slice(0, 10);
+    const raw = window.prompt(
+      `Zaplanuj „${s.label || 'Trening'}" na datę (YYYY-MM-DD):`,
+      defaultDate,
+    );
+    if (!raw) return;
+    const target = raw.trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(target)) {
+      setError('Nieprawidłowa data — użyj formatu YYYY-MM-DD.');
+      return;
+    }
+    try {
+      await tasksApi.createTask({
+        title: s.label || 'Trening',
+        category: 'health',
+        priority: 'medium',
+        scheduled_date: target,
+        estimated_minutes: s.duration_min ?? 60,
+        task_type: 'workout',
+        workout_template_label: s.label || 'Trening',
+      });
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Nie udało się zaplanować');
+    }
+  };
+
   const renderRow = (s: GymSession, compact = false) => (
     <SessionRow
       key={s.id}
@@ -54,6 +86,7 @@ export default function WorkoutLog({ sessions, onChanged }: WorkoutLogProps) {
       onCancelDelete={() => setConfirmId(null)}
       onConfirmDelete={() => remove(s.id)}
       onEdit={() => setEditing(s)}
+      onSchedule={() => void schedule(s)}
     />
   );
 
@@ -111,6 +144,7 @@ interface SessionRowProps {
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
   onEdit: () => void;
+  onSchedule: () => void;
 }
 
 function SessionRow({
@@ -121,6 +155,7 @@ function SessionRow({
   onCancelDelete,
   onConfirmDelete,
   onEdit,
+  onSchedule,
 }: SessionRowProps) {
   return (
     <li className="rounded-md border border-border bg-surface2 p-3">
@@ -155,6 +190,14 @@ function SessionRow({
             <>
               <button
                 type="button"
+                onClick={onSchedule}
+                className="text-muted hover:text-accent-orange"
+                title="Zaplanuj na dzień (utworzy zadanie typu workout)"
+              >
+                <CalendarPlus size={13} />
+              </button>
+              <button
+                type="button"
                 onClick={onEdit}
                 className="text-muted hover:text-white"
                 title="Edytuj sesję"
@@ -185,6 +228,41 @@ function SessionRow({
           ))}
         </ul>
       )}
+      {session.kcal_total != null && <KcalRow session={session} />}
     </li>
+  );
+}
+
+function KcalRow({ session }: { session: GymSession }) {
+  const fatPct = session.fat_pct ?? 40;
+  const carbPct = session.carb_pct ?? 100 - fatPct;
+  return (
+    <div className="mt-2 border-t border-border pt-2 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="inline-flex items-center gap-1 text-accent-orange">
+          🔥 <span className="font-mono">{Math.round(session.kcal_total ?? 0)} kcal</span>
+        </span>
+        {session.kcal_epoc != null && (
+          <span className="text-muted">
+            · +<span className="font-mono text-white">{Math.round(session.kcal_epoc)}</span> EPOC
+          </span>
+        )}
+        {session.fat_grams != null && (
+          <span className="text-muted">
+            · 🧈 <span className="font-mono text-white">{session.fat_grams.toFixed(1)}g</span> tłuszczu
+          </span>
+        )}
+      </div>
+      <div className="flex h-1.5 overflow-hidden rounded-full bg-surface2">
+        <div style={{ width: `${fatPct}%`, backgroundColor: '#F97316' }} />
+        <div style={{ width: `${carbPct}%`, backgroundColor: '#3B82F6' }} />
+      </div>
+      <div className="text-[10px] font-mono text-muted">
+        {Math.round(fatPct)}% tłuszcz / {Math.round(carbPct)}% węgle
+      </div>
+      {session.analysis_note && (
+        <p className="truncate text-[11px] italic text-muted">&quot;{session.analysis_note}&quot;</p>
+      )}
+    </div>
   );
 }

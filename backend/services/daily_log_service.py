@@ -8,9 +8,13 @@ Stamina is real-time minutes, not points:
 
     base_pool   = ((sleep_score + energy_score) / 2) * 6     # capped [0, 600]
     boosts_total = sum(stamina_boosts.ap_restored where date = today)
-    ap_used      = sum(estimated_minutes of completed non-regenerative tasks)
-    ap_restored  = sum(estimated_minutes of completed regenerative tasks)
+    ap_used      = sum(ap_cost of completed non-regenerative tasks)
+    ap_restored  = sum(ap_cost of completed regenerative tasks)
     ap_available = max(0, base_pool + boosts_total - ap_used + ap_restored)
+
+`ap_cost` is the priority-weighted column on `daily_tasks` (migration 013):
+HIGH × 1.5, MEDIUM × 1.0, LOW × 0.7. Regenerative tasks ignore the
+multiplier and use raw `estimated_minutes`.
 
 Per ADR-003 the system is single-user — `user_id` is resolved internally
 via `get_user_id`. Per ADR-010 task data lives in `daily_tasks`.
@@ -210,7 +214,7 @@ def _today_tasks(
 ) -> list[dict]:
     res = (
         supabase.table(config.TABLE_DAILY_TASKS)
-        .select("id,title,status,estimated_minutes,is_regenerative")
+        .select("id,title,status,estimated_minutes,is_regenerative,ap_cost")
         .eq("user_id", user_id)
         .eq("date", target.isoformat())
         .execute()
@@ -237,11 +241,15 @@ def get_stamina_status(
     breakdown: list[TaskAPItem] = []
 
     for r in rows:
-        minutes = r.get("estimated_minutes") or 0
+        # `ap_cost` is the priority-weighted generated column (migration 013);
+        # falls back to `estimated_minutes` for rows predating that migration.
+        cost = r.get("ap_cost")
+        if cost is None:
+            cost = r.get("estimated_minutes") or 0
         is_regen = bool(r.get("is_regenerative"))
         is_done = r.get("status") == "done"
         # Signed cost — negative for regenerative, positive for draining.
-        signed = -minutes if is_regen else minutes
+        signed = -cost if is_regen else cost
         breakdown.append(
             TaskAPItem(
                 task_id=r["id"],
@@ -251,11 +259,11 @@ def get_stamina_status(
                 is_regenerative=is_regen,
             )
         )
-        if is_done and minutes > 0:
+        if is_done and cost > 0:
             if is_regen:
-                ap_restored += minutes
+                ap_restored += cost
             else:
-                ap_used += minutes
+                ap_used += cost
 
     ap_available = max(0, base_pool + boosts_total - ap_used + ap_restored)
     pct = (ap_available / base_pool * 100.0) if base_pool > 0 else 0.0

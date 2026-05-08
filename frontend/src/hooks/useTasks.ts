@@ -8,6 +8,7 @@ import type {
   TaskCreatePayload,
   TaskStatus,
   TaskUpdatePayload,
+  WorkoutCompleteMeta,
 } from '../types';
 
 /**
@@ -24,7 +25,7 @@ import type {
 interface UseTasksApi extends TaskContextValue {
   createTask: (payload: TaskCreatePayload) => Promise<Task>;
   updateTask: (id: string, payload: TaskUpdatePayload) => Promise<Task>;
-  completeTask: (id: string) => Promise<TaskCompletionResult>;
+  completeTask: (id: string, meta?: WorkoutCompleteMeta) => Promise<TaskCompletionResult>;
   uncompleteTask: (id: string) => Promise<Task>;
   skipTask: (id: string) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
@@ -75,10 +76,13 @@ export function useTasks(): UseTasksApi {
     return task;
   };
 
-  const completeTask = async (id: string): Promise<TaskCompletionResult> => {
+  const completeTask = async (
+    id: string,
+    meta?: WorkoutCompleteMeta,
+  ): Promise<TaskCompletionResult> => {
     patchToday((day) => patchTaskInDay(day, id, setStatusOptimistic('done')));
     try {
-      const result = await tasksApi.completeTask(id);
+      const result = await tasksApi.completeTask(id, meta);
       // Replace the optimistic row with the authoritative server row.
       patchToday((day) => patchTaskInDay(day, id, () => result.task));
       refreshKronos();

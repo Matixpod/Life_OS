@@ -1,4 +1,4 @@
-import { Loader2, Plus, Save, Search, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { prometheusApi } from '../../api/prometheus';
 import {
@@ -45,6 +45,9 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
   const [items, setItems] = useState<BuilderItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hrOpen, setHrOpen] = useState(false);
+  const [duration, setDuration] = useState<string>('');
+  const [avgHr, setAvgHr] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
@@ -134,9 +137,13 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
         date: todayIso(),
         label: deriveLabel(items),
         exercises: payload,
+        ...(Number(duration) > 0 ? { duration_min: Number(duration) } : {}),
+        ...(Number(avgHr) > 0 ? { avg_hr: Number(avgHr) } : {}),
       });
       setItems([]);
       setSearch('');
+      setDuration('');
+      setAvgHr('');
       onSessionSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Nie udało się zapisać');
@@ -256,6 +263,55 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
                 />
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-md border border-border bg-surface2/40">
+        <button
+          type="button"
+          onClick={() => setHrOpen((v) => !v)}
+          aria-expanded={hrOpen}
+          className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] uppercase tracking-widest text-muted hover:text-white"
+        >
+          <span>⏱ Czas i tętno (opcjonalne)</span>
+          {hrOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </button>
+        {hrOpen && (
+          <div className="space-y-2 border-t border-border px-3 py-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="flex items-baseline justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-muted">Czas treningu</span>
+                  <span className="text-[10px] text-muted">min</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={300}
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-border bg-surface2 px-3 py-2 font-mono text-sm text-white focus:border-accent-orange focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="flex items-baseline justify-between">
+                  <span className="text-[10px] uppercase tracking-widest text-muted">Średnie tętno</span>
+                  <span className="text-[10px] text-muted">bpm</span>
+                </label>
+                <input
+                  type="number"
+                  min={30}
+                  max={240}
+                  value={avgHr}
+                  onChange={(e) => setAvgHr(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-border bg-surface2 px-3 py-2 font-mono text-sm text-white focus:border-accent-orange focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="text-[10px] text-muted">
+              💡 Czas wymagany do obliczeń kalorii. Tętno zwiększa dokładność o ~30%.
+            </div>
           </div>
         )}
       </div>
