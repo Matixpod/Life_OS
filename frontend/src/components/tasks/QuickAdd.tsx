@@ -1,14 +1,15 @@
-import { Clock, Crown, Leaf, Plus } from 'lucide-react';
+import { Crown, Leaf, Plus } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { habitsApi } from '../../api/habits';
 import { projectsApi } from '../../api/projects';
 import { useKeyboardShortcut } from '../../hooks/useKeyboardShortcut';
 import { useTasks } from '../../hooks/useTasks';
-import type { ProjectV2, TaskCategory, TaskPriority } from '../../types';
+import type { DayPart, ProjectV2, TaskCategory, TaskPriority } from '../../types';
 import HabitRecurrenceSelector, {
   type HabitRecurrenceValue,
 } from '../habits/HabitRecurrenceSelector';
-import DurationPicker from '../ui/DurationPicker';
+import DayPartTimePicker from '../ui/DayPartTimePicker';
+import DurationChips from '../ui/DurationChips';
 import { CATEGORIES, CATEGORY_META, PRIORITY_BORDER, PRIORITY_LABEL } from './categories';
 
 const PRIORITIES: TaskPriority[] = ['low', 'medium', 'high'];
@@ -32,9 +33,9 @@ export default function QuickAdd({ onCreated }: Props = {}) {
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [estimatedMin, setEstimatedMin] = useState<string>('');
   const [durationMin, setDurationMin] = useState<number>(0);
-  const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [isRegenerative, setIsRegenerative] = useState(false);
   const [isMainQuest, setIsMainQuest] = useState(false);
+  const [dayPart, setDayPart] = useState<DayPart | null>(null);
   const [recurrence, setRecurrence] = useState<HabitRecurrenceValue>({
     recurrence_type: 'daily',
     selected_days: null,
@@ -96,6 +97,7 @@ export default function QuickAdd({ onCreated }: Props = {}) {
           estimated_minutes: minutes,
           is_main_quest: isMainQuest,
           is_regenerative: isRegenerative,
+          day_part: dayPart,
         });
       } else if (type === 'habit') {
         await habitsApi.create({
@@ -106,6 +108,7 @@ export default function QuickAdd({ onCreated }: Props = {}) {
           selected_days: recurrence.selected_days,
           monthly_day: recurrence.monthly_day,
           custom_rule: recurrence.custom_rule,
+          day_part: dayPart,
         });
       } else {
         if (!projectId) {
@@ -124,9 +127,9 @@ export default function QuickAdd({ onCreated }: Props = {}) {
       setTitle('');
       setEstimatedMin('');
       setDurationMin(0);
-      setShowDurationPicker(false);
       setIsRegenerative(false);
       setIsMainQuest(false);
+      setDayPart(null);
       onCreated?.();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to add');
@@ -256,20 +259,7 @@ export default function QuickAdd({ onCreated }: Props = {}) {
 
       {type === 'task' && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <button
-            type="button"
-            onClick={() => setShowDurationPicker((v) => !v)}
-            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition-colors ${
-              showDurationPicker || durationMin > 0
-                ? 'border-amber-400/60 bg-amber-400/10 text-amber-300'
-                : 'border-border bg-transparent text-muted hover:text-white'
-            }`}
-          >
-            <Clock size={11} />
-            {durationMin > 0
-              ? `${Math.floor(durationMin / 60)}h ${durationMin % 60}min`
-              : 'Czas'}
-          </button>
+          <DurationChips value={durationMin} onChange={setDurationMin} />
           <button
             type="button"
             onClick={() => setIsRegenerative((v) => !v)}
@@ -317,12 +307,8 @@ export default function QuickAdd({ onCreated }: Props = {}) {
         </div>
       )}
 
-      {type === 'task' && showDurationPicker && (
-        <DurationPicker
-          value={durationMin}
-          onChange={setDurationMin}
-          isRegenerative={isRegenerative}
-        />
+      {(type === 'task' || type === 'habit') && (
+        <DayPartTimePicker dayPart={dayPart} onChange={setDayPart} />
       )}
 
       {type === 'habit' && (

@@ -51,7 +51,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
   {
     title: 'TRACKING',
     items: [
-      { to: '/workout', icon: Dumbbell, label: 'Workout' },
+      { to: '/workout', icon: Dumbbell, label: 'PROMETHEUS' },
       { to: '/cognitive', icon: Brain, label: 'Cognitive' },
       { to: '/mental-health', icon: Heart, label: 'Mental Health' },
       { to: '/body', icon: Activity, label: 'Body Metrics' },

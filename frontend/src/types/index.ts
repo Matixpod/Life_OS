@@ -337,6 +337,8 @@ export interface KronosAnalysisRequest {
 
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+export type DayPart = 'morning' | 'day' | 'evening';
+
 export interface Task {
   id: string;
   user_id: string;
@@ -355,6 +357,8 @@ export interface Task {
   is_main_quest?: boolean;
   is_regenerative?: boolean;
   ap_cost?: number | null;
+  start_time?: string | null;
+  day_part?: DayPart | null;
 }
 
 export interface TaskCreatePayload {
@@ -366,6 +370,8 @@ export interface TaskCreatePayload {
   notes?: string | null;
   is_main_quest?: boolean;
   is_regenerative?: boolean;
+  start_time?: string | null;
+  day_part?: DayPart | null;
 }
 
 export interface TaskUpdatePayload {
@@ -378,6 +384,8 @@ export interface TaskUpdatePayload {
   notes?: string | null;
   is_main_quest?: boolean;
   is_regenerative?: boolean;
+  start_time?: string | null;
+  day_part?: DayPart | null;
 }
 
 export interface CategoryDaySummary {
@@ -559,6 +567,8 @@ export interface Habit {
   created_at: string;
   updated_at: string | null;
   completed_today: boolean;
+  start_time?: string | null;
+  day_part?: DayPart | null;
 }
 
 export interface HabitCreatePayload {
@@ -574,6 +584,8 @@ export interface HabitCreatePayload {
   estimated_minutes?: number | null;
   is_regenerative?: boolean;
   notes?: string | null;
+  start_time?: string | null;
+  day_part?: DayPart | null;
 }
 
 export interface HabitUpdatePayload {
@@ -590,6 +602,8 @@ export interface HabitUpdatePayload {
   is_regenerative?: boolean;
   is_active?: boolean;
   notes?: string | null;
+  start_time?: string | null;
+  day_part?: DayPart | null;
 }
 
 export interface HabitCompletionResult {
@@ -741,6 +755,8 @@ export interface CalendarItem {
   project_task_id: string | null;
   agent_route: string;
   is_main_quest?: boolean;
+  start_time?: string | null;
+  day_part?: DayPart | null;
 }
 
 export interface CalendarDay {

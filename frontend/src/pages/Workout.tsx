@@ -1,12 +1,5 @@
-import { Dumbbell } from 'lucide-react';
-import ModulePlaceholder from '../components/ModulePlaceholder';
+import PrometheusPage from '../components/prometheus/PrometheusPage';
 
 export default function Workout() {
-  return (
-    <ModulePlaceholder
-      icon={Dumbbell}
-      title="Workout"
-      description="Strength, cardio, flexibility, and sport sessions with muscle-group tracking."
-    />
-  );
+  return <PrometheusPage />;
 }

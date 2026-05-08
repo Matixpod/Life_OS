@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 from datetime import date as DateType
-from datetime import datetime
+from datetime import datetime, time
 from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from models.kronos import TaskCategory
-from models.task_models import Task, TaskPriority
+from models.task_models import DayPart, Task, TaskPriority
 
 __all__ = [
     "CustomRecurrenceRule",
@@ -59,6 +59,8 @@ class HabitCreate(BaseModel):
     estimated_minutes: int | None = Field(default=None, ge=0, le=600)
     is_regenerative: bool = False
     notes: str | None = None
+    start_time: time | None = None
+    day_part: DayPart | None = None
 
 
 class HabitUpdate(BaseModel):
@@ -75,6 +77,8 @@ class HabitUpdate(BaseModel):
     is_regenerative: bool | None = None
     is_active: bool | None = None
     notes: str | None = None
+    start_time: time | None = None
+    day_part: DayPart | None = None
 
 
 class Habit(BaseModel):
@@ -98,6 +102,8 @@ class Habit(BaseModel):
     created_at: datetime
     updated_at: datetime | None = None
     completed_today: bool = False
+    start_time: time | None = None
+    day_part: DayPart | None = None
 
 
 class HabitCompletionResult(BaseModel):

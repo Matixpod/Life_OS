@@ -48,6 +48,8 @@ class HabitNotFound(LookupError):
 
 
 def _row_to_habit(row: dict) -> Habit:
+    start_time_raw = row.get("start_time")
+    day_part_raw = row.get("day_part")
     return Habit(
         id=row["id"],
         user_id=row["user_id"],
@@ -76,7 +78,31 @@ def _row_to_habit(row: dict) -> Habit:
         notes=row.get("notes"),
         created_at=_parse_iso(row["created_at"]) or datetime.now(tz=UTC),
         updated_at=_parse_iso(row.get("updated_at")),
+        start_time=_parse_time(start_time_raw) if start_time_raw else None,
+        day_part=day_part_raw if day_part_raw in {"morning", "day", "evening"} else None,
     )
+
+
+def _parse_time(raw):  # type: ignore[no-untyped-def]
+    from datetime import time as _time
+
+    if isinstance(raw, _time):
+        return raw
+    try:
+        return _time.fromisoformat(str(raw)[:8])
+    except ValueError:
+        return None
+
+
+def _infer_day_part(t) -> str | None:  # type: ignore[no-untyped-def]
+    if t is None:
+        return None
+    h = t.hour
+    if 5 <= h < 12:
+        return "morning"
+    if 12 <= h < 18:
+        return "day"
+    return "evening"
 
 
 def _parse_iso(raw: str | None) -> datetime | None:
@@ -92,6 +118,9 @@ def _parse_iso(raw: str | None) -> datetime | None:
 
 
 def create_habit(supabase: Client, user_id: str, data: HabitCreate) -> Habit:
+    inferred_part = (
+        data.day_part if data.day_part is not None else _infer_day_part(data.start_time)
+    )
     record = {
         "user_id": user_id,
         "title": data.title.strip(),
@@ -110,6 +139,8 @@ def create_habit(supabase: Client, user_id: str, data: HabitCreate) -> Habit:
         "estimated_minutes": data.estimated_minutes,
         "is_regenerative": data.is_regenerative,
         "notes": data.notes,
+        "start_time": data.start_time.isoformat() if data.start_time else None,
+        "day_part": inferred_part,
     }
     res = supabase.table(TABLE_HABITS).insert(record).execute()
     if not res.data:
@@ -148,6 +179,14 @@ def update_habit(
         patch["is_active"] = data.is_active
     if data.notes is not None:
         patch["notes"] = data.notes
+    if "start_time" in data.model_fields_set:
+        patch["start_time"] = (
+            data.start_time.isoformat() if data.start_time else None
+        )
+        if "day_part" not in data.model_fields_set:
+            patch["day_part"] = _infer_day_part(data.start_time)
+    if "day_part" in data.model_fields_set:
+        patch["day_part"] = data.day_part
     res = (
         supabase.table(TABLE_HABITS)
         .update(patch)
@@ -164,6 +203,14 @@ def update_habit(
         daily_patch["estimated_minutes"] = data.estimated_minutes
     if data.is_regenerative is not None:
         daily_patch["is_regenerative"] = data.is_regenerative
+    if "start_time" in data.model_fields_set:
+        daily_patch["start_time"] = (
+            data.start_time.isoformat() if data.start_time else None
+        )
+        if "day_part" not in data.model_fields_set:
+            daily_patch["day_part"] = _infer_day_part(data.start_time)
+    if "day_part" in data.model_fields_set:
+        daily_patch["day_part"] = data.day_part
     if daily_patch:
         (
             supabase.table(config.TABLE_DAILY_TASKS)
@@ -361,6 +408,11 @@ def generate_habit_entries(
                 "source": "agent",
                 "estimated_minutes": habit.estimated_minutes,
                 "is_regenerative": habit.is_regenerative,
+                "start_time": (
+                    habit.start_time.isoformat() if habit.start_time else None
+                ),
+                "day_part": habit.day_part
+                or _infer_day_part(habit.start_time),
             }
         )
 
@@ -384,6 +436,8 @@ def _row_to_task(row: dict) -> Task:
     cat = row.get("category")
     status_raw = row.get("status") or "todo"
     pri_int = row.get("priority") or 2
+    start_time_raw = row.get("start_time")
+    day_part_raw = row.get("day_part")
     return Task(
         id=row["id"],
         user_id=row["user_id"],
@@ -406,6 +460,8 @@ def _row_to_task(row: dict) -> Task:
         task_type=row.get("task_type") or "task",
         habit_id=row.get("habit_id"),
         project_task_id=row.get("project_task_id"),
+        start_time=_parse_time(start_time_raw) if start_time_raw else None,
+        day_part=day_part_raw if day_part_raw in {"morning", "day", "evening"} else None,
     )
 
 

@@ -12,7 +12,7 @@ HTTP statuses (404, 409, 422). The router is the only layer that knows
 about HTTP.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from datetime import date as DateType
 
 from supabase import Client
@@ -76,6 +76,11 @@ def _row_to_task(row: dict) -> Task:
     scheduled_raw = row.get("date")
     scheduled_date = DateType.fromisoformat(scheduled_raw) if scheduled_raw else None
 
+    start_time_raw = row.get("start_time")
+    start_time_value = _parse_time(start_time_raw) if start_time_raw else None
+    day_part_raw = row.get("day_part")
+    day_part_value = day_part_raw if day_part_raw in {"morning", "day", "evening"} else None
+
     return Task(
         id=row["id"],
         user_id=row["user_id"],
@@ -94,7 +99,35 @@ def _row_to_task(row: dict) -> Task:
         is_main_quest=bool(row.get("is_main_quest")),
         is_regenerative=bool(row.get("is_regenerative")),
         ap_cost=row.get("ap_cost"),
+        start_time=start_time_value,
+        day_part=day_part_value,
     )
+
+
+def _parse_time(raw: str | time) -> time | None:
+    if isinstance(raw, time):
+        return raw
+    try:
+        return time.fromisoformat(str(raw)[:8])
+    except ValueError:
+        return None
+
+
+def _infer_day_part(t: time | None) -> str | None:
+    """Map a wall-clock time to one of 'morning' / 'day' / 'evening'.
+
+    Windows: 05:00–11:59 morning · 12:00–17:59 day · 18:00–04:59 evening.
+    Returns None when no time is provided so callers can leave the column
+    untouched (a manual day_part survives without a time).
+    """
+    if t is None:
+        return None
+    h = t.hour
+    if 5 <= h < 12:
+        return "morning"
+    if 12 <= h < 18:
+        return "day"
+    return "evening"
 
 
 def _fetch_owned_row(supabase: Client, task_id: str, user_id: str) -> dict | None:
@@ -118,6 +151,11 @@ def create_task(supabase: Client, payload: TaskCreate) -> Task:
     if not title:
         raise ValueError("Title is empty after trimming whitespace.")
 
+    inferred_part = (
+        payload.day_part
+        if payload.day_part is not None
+        else _infer_day_part(payload.start_time)
+    )
     record: dict = {
         "user_id": user_id,
         "title": title,
@@ -129,6 +167,8 @@ def create_task(supabase: Client, payload: TaskCreate) -> Task:
         "source": "manual",
         "is_main_quest": payload.is_main_quest,
         "is_regenerative": payload.is_regenerative,
+        "start_time": payload.start_time.isoformat() if payload.start_time else None,
+        "day_part": inferred_part,
     }
     # `daily_tasks.date` is currently NOT NULL (migration 003). When the
     # column is later relaxed to support backlog, omitting `date` here
@@ -171,6 +211,16 @@ def update_task(supabase: Client, task_id: str, payload: TaskUpdate) -> Task:
         update["is_main_quest"] = payload.is_main_quest
     if payload.is_regenerative is not None:
         update["is_regenerative"] = payload.is_regenerative
+    if "start_time" in payload.model_fields_set:
+        update["start_time"] = (
+            payload.start_time.isoformat() if payload.start_time else None
+        )
+        # If the caller didn't override day_part, snap it to the time window so
+        # the column never drifts from the rule "08:00 → morning".
+        if "day_part" not in payload.model_fields_set:
+            update["day_part"] = _infer_day_part(payload.start_time)
+    if "day_part" in payload.model_fields_set:
+        update["day_part"] = payload.day_part
 
     if not update:
         return _row_to_task(row)

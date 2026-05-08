@@ -14,7 +14,7 @@ truth for the RPG-style category enum.
 """
 
 from datetime import date as DateType
-from datetime import datetime
+from datetime import datetime, time
 from enum import StrEnum
 from typing import Literal
 
@@ -26,6 +26,7 @@ __all__ = [
     "TaskCategory",
     "TaskStatus",
     "TaskPriority",
+    "DayPart",
     "PRIORITY_TO_INT",
     "INT_TO_PRIORITY",
     "TaskCreate",
@@ -36,6 +37,9 @@ __all__ = [
     "WeeklyTaskList",
     "TaskCompletionResult",
 ]
+
+
+DayPart = Literal["morning", "day", "evening"]
 
 
 # ─── Priority ─────────────────────────────────────────────────────────────────
@@ -88,6 +92,8 @@ class TaskCreate(BaseModel):
     notes: str | None = Field(default=None, max_length=1000)
     is_main_quest: bool = False
     is_regenerative: bool = False
+    start_time: time | None = None
+    day_part: DayPart | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -102,6 +108,8 @@ class TaskUpdate(BaseModel):
     notes: str | None = Field(default=None, max_length=1000)
     is_main_quest: bool | None = None
     is_regenerative: bool | None = None
+    start_time: time | None = None
+    day_part: DayPart | None = None
 
 
 # ─── Resource model ──────────────────────────────────────────────────────────
@@ -135,6 +143,8 @@ class Task(BaseModel):
     is_main_quest: bool = False
     is_regenerative: bool = False
     ap_cost: int | None = None  # generated column: equals estimated_minutes
+    start_time: time | None = None
+    day_part: DayPart | None = None
 
 
 # ─── Aggregations ────────────────────────────────────────────────────────────

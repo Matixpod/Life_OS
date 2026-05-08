@@ -1,7 +1,7 @@
 from datetime import date as DateType
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # ─── Base ─────────────────────────────────────────────────────────────────────
 
@@ -236,3 +236,110 @@ class PeriodicReview(BaseModel):
     context_snapshot: str | None
     highlights: dict[str, Any] | None = None
     created_at: str
+
+
+# ─── PROMETHEUS gym module ────────────────────────────────────────────────────
+
+
+class ExerciseSet(BaseModel):
+    reps: int = Field(ge=0, le=200)
+    kg: float = Field(ge=0.0, le=1000.0)
+
+
+class ExerciseCreate(BaseModel):
+    name: str
+    muscle_load: dict[str, float] = Field(default_factory=dict)
+
+
+class SessionExerciseCreate(BaseModel):
+    exercise_name: str
+    sets: list[ExerciseSet] = Field(default_factory=list)
+    muscle_load: dict[str, float] = Field(default_factory=dict)
+
+
+class SessionCreate(BaseModel):
+    date: DateType
+    label: str
+    notes: str | None = None
+    exercises: list[SessionExerciseCreate] = Field(default_factory=list)
+
+
+class ParseExerciseRequest(BaseModel):
+    text: str
+
+
+class ParseExerciseResponse(BaseModel):
+    exercise_name: str
+    sets: list[ExerciseSet] = Field(default_factory=list)
+    muscle_load: dict[str, float] = Field(default_factory=dict)
+    comment: str = ""
+
+
+class WeeklyReportRequest(BaseModel):
+    week_start: DateType
+
+
+class PrometheusMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class PrometheusChatRequest(BaseModel):
+    messages: list[PrometheusMessage] = Field(default_factory=list)
+
+
+class PrometheusSessionExercise(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    session_id: str
+    exercise_name: str
+    sets: list[ExerciseSet] = Field(default_factory=list)
+    muscle_load: dict[str, float] = Field(default_factory=dict)
+    order_index: int = 0
+
+
+class PrometheusSession(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    date: DateType
+    label: str
+    notes: str | None = None
+    created_at: str
+    exercises: list[PrometheusSessionExercise] = Field(default_factory=list)
+
+
+class PrometheusExercise(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    muscle_load: dict[str, float] = Field(default_factory=dict)
+    created_at: str
+
+
+class WeeklyReportDay(BaseModel):
+    day: str
+    focus: str
+    exercises: list[str] = Field(default_factory=list)
+
+
+class WeeklyReportPayload(BaseModel):
+    summary: str = ""
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    missed_muscles: list[str] = Field(default_factory=list)
+    next_week_plan: list[WeeklyReportDay] = Field(default_factory=list)
+    prometheus_words: str = ""
+
+
+class WeeklyReportResponse(WeeklyReportPayload):
+    week_start: DateType
+
+
+class SessionUpdate(BaseModel):
+    label: str | None = None
+    notes: str | None = None
+    exercises: list[SessionExerciseCreate] | None = None
+
+
+class LastSetsResponse(BaseModel):
+    sets: list[ExerciseSet] = Field(default_factory=list)

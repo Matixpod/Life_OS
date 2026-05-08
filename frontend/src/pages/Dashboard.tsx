@@ -17,13 +17,12 @@ import ActivityTimeline from '../components/ActivityTimeline';
 import ErrorBanner from '../components/ErrorBanner';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import ModuleCard, { type ModuleStatus } from '../components/ModuleCard';
-import MorningPopup from '../components/MorningPopup';
 import PotentialScoreGauge from '../components/PotentialScoreGauge';
 import QuickAddFAB from '../components/QuickAddFAB';
 import StreakBanner from '../components/StreakBanner';
 import { api } from '../services/api';
 import type { DailySummary, GoalsSummary, UserProfile } from '../types';
-import { formatDuration, todayIso } from '../utils/date';
+import { formatDuration } from '../utils/date';
 
 const MIN_SKELETON_MS = 1500;
 
@@ -192,10 +191,6 @@ export default function Dashboard() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showMorning, setShowMorning] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return !localStorage.getItem(`lifeos_morning_${todayIso()}`);
-  });
 
   const load = () => {
     setLoading(true);
@@ -243,8 +238,6 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, []);
-
-  const handleMorningClose = () => setShowMorning(false);
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in">
@@ -297,7 +290,6 @@ export default function Dashboard() {
       </section>
 
       <QuickAddFAB />
-      {showMorning && <MorningPopup onClose={handleMorningClose} />}
     </div>
   );
 }

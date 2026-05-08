@@ -18,6 +18,7 @@ from routers import (
     kronos,
     mental_health,
     projects_v2,
+    prometheus,
     proposals,
     review,
     sleep,
@@ -63,3 +64,4 @@ app.include_router(projects_v2.router, prefix="/api/v1")
 app.include_router(proposals.router, prefix="/api/v1")
 app.include_router(calendar.router, prefix="/api/v1")
 app.include_router(daily_system.router, prefix="/api/v1")
+app.include_router(prometheus.router, prefix="/api/v1")

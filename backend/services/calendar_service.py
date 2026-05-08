@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date as DateType
+from datetime import time as TimeType
 from datetime import timedelta
 
 from supabase import Client
@@ -36,6 +37,16 @@ def _row_to_calendar_item(row: dict) -> CalendarItem:
     status_raw = row.get("status") or "todo"
     type_raw = row.get("task_type") or "task"
     category = TaskCategory(cat_raw) if cat_raw else None
+    start_time_raw = row.get("start_time")
+    day_part_raw = row.get("day_part")
+    start_time_value: TimeType | None = None
+    if isinstance(start_time_raw, TimeType):
+        start_time_value = start_time_raw
+    elif start_time_raw:
+        try:
+            start_time_value = TimeType.fromisoformat(str(start_time_raw)[:8])
+        except ValueError:
+            start_time_value = None
     return CalendarItem(
         id=row["id"],
         type=type_raw,
@@ -49,6 +60,8 @@ def _row_to_calendar_item(row: dict) -> CalendarItem:
         project_task_id=row.get("project_task_id"),
         agent_route=get_agent_route(category),
         is_main_quest=bool(row.get("is_main_quest")),
+        start_time=start_time_value,
+        day_part=day_part_raw if day_part_raw in {"morning", "day", "evening"} else None,
     )
 
 

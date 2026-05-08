@@ -54,3 +54,9 @@ DEFAULT_OLLAMA_MODEL = "qwen2.5:7b-instruct-q4_K_M"
 # Daily System (migration 009)
 TABLE_DAILY_LOGS = "daily_logs"
 TABLE_STAMINA_BOOSTS = "stamina_boosts"
+
+# PROMETHEUS gym module (migration 020)
+TABLE_PROMETHEUS_EXERCISES = "prometheus_exercises"
+TABLE_PROMETHEUS_SESSIONS = "prometheus_sessions"
+TABLE_PROMETHEUS_SESSION_EXES = "prometheus_session_exercises"
+TABLE_PROMETHEUS_REPORTS = "prometheus_reports"

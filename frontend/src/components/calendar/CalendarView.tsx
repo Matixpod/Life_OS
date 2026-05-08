@@ -4,6 +4,7 @@ import { calendarApi } from '../../api/calendar';
 import type { CalendarDay } from '../../types';
 import CalendarItem from './CalendarItem';
 import ProposalCard from './ProposalCard';
+import { sortCalendarItems } from './dayPart';
 
 type Mode = 'day' | 'week' | 'month';
 
@@ -181,28 +182,60 @@ interface DayPanelProps {
 }
 
 function DayPanel({ day, onProposalResolved, onItemToggled }: DayPanelProps) {
+  const sortedItems = sortCalendarItems(day.items);
+  const habits = sortedItems.filter((it) => it.type === 'habit_entry');
+  const tasks = sortedItems.filter((it) => it.type !== 'habit_entry');
+  const completionPct = Math.round(day.completion_rate * 100);
+
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="mb-3 flex items-center justify-between">
+    <div className="mx-auto w-full max-w-3xl">
+      <div className="mb-2 flex items-center justify-between">
         <div className="font-mono text-sm">{day.date}</div>
-        <div className="text-[11px] text-muted">
-          Ukończenie: <span className="font-mono">{Math.round(day.completion_rate * 100)}%</span>
-        </div>
+        <div className="font-mono text-[11px] text-muted">{completionPct}%</div>
       </div>
+      <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-surface2">
+        <div
+          className="h-full rounded-full bg-accent-emerald transition-all duration-500"
+          style={{ width: `${completionPct}%` }}
+        />
+      </div>
+
       {day.proposals.length > 0 && (
-        <div className="mb-3 space-y-2">
+        <div className="mb-5 space-y-2">
           {day.proposals.map((p) => (
             <ProposalCard key={p.id} proposal={p} onResolved={onProposalResolved} />
           ))}
         </div>
       )}
+
       {day.items.length === 0 && day.proposals.length === 0 ? (
         <div className="text-xs text-muted">Brak pozycji.</div>
       ) : (
-        <div className="space-y-1.5">
-          {day.items.map((it) => (
-            <CalendarItem key={it.id} item={it} onToggled={onItemToggled} />
-          ))}
+        <div className="space-y-8">
+          {habits.length > 0 && (
+            <section>
+              <h3 className="mb-3 text-[11px] uppercase tracking-widest text-muted">
+                Nawyki i Rutyny
+              </h3>
+              <div className="space-y-2">
+                {habits.map((it) => (
+                  <CalendarItem key={it.id} item={it} compact onToggled={onItemToggled} />
+                ))}
+              </div>
+            </section>
+          )}
+          {tasks.length > 0 && (
+            <section>
+              <h3 className="mb-3 text-[11px] uppercase tracking-widest text-muted">
+                Zadania i Projekty
+              </h3>
+              <div className="space-y-3">
+                {tasks.map((it) => (
+                  <CalendarItem key={it.id} item={it} onToggled={onItemToggled} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>
@@ -211,6 +244,7 @@ function DayPanel({ day, onProposalResolved, onItemToggled }: DayPanelProps) {
 
 function DayColumn({ day, onProposalResolved, onItemToggled }: DayPanelProps) {
   const dow = new Date(day.date + 'T00:00:00Z').getUTCDay() || 7;
+  const sortedItems = sortCalendarItems(day.items);
   return (
     <div className="rounded-lg border border-border bg-surface p-2">
       <div className="mb-2 flex items-center justify-between">
@@ -225,10 +259,10 @@ function DayColumn({ day, onProposalResolved, onItemToggled }: DayPanelProps) {
         </div>
       ))}
       <div className="space-y-1">
-        {day.items.length === 0 ? (
+        {sortedItems.length === 0 ? (
           <div className="text-[11px] text-muted">—</div>
         ) : (
-          day.items.map((it) => <CalendarItem key={it.id} item={it} compact onToggled={onItemToggled} />)
+          sortedItems.map((it) => <CalendarItem key={it.id} item={it} compact onToggled={onItemToggled} />)
         )}
       </div>
     </div>
@@ -284,7 +318,7 @@ function MonthGrid({ days, onProposalResolved, onItemToggled, anchor }: MonthGri
                 {cell.proposals.slice(0, 1).map((p) => (
                   <ProposalCard key={p.id} proposal={p} onResolved={onProposalResolved} />
                 ))}
-                {cell.items.slice(0, 3).map((it) => (
+                {sortCalendarItems(cell.items).slice(0, 3).map((it) => (
                   <CalendarItem key={it.id} item={it} compact onToggled={onItemToggled} />
                 ))}
                 {cell.items.length > 3 && (

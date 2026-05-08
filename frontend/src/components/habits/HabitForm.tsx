@@ -1,7 +1,8 @@
-import { Clock, Leaf, Save, X } from 'lucide-react';
+import { Leaf, Save, X } from 'lucide-react';
 import { useState } from 'react';
 import { habitsApi } from '../../api/habits';
 import type {
+  DayPart,
   Habit,
   HabitCreatePayload,
   HabitUpdatePayload,
@@ -9,7 +10,8 @@ import type {
   TaskPriority,
 } from '../../types';
 import { CATEGORIES, CATEGORY_META, PRIORITY_BORDER, PRIORITY_LABEL } from '../tasks/categories';
-import DurationPicker from '../ui/DurationPicker';
+import DayPartTimePicker from '../ui/DayPartTimePicker';
+import DurationChips from '../ui/DurationChips';
 import HabitRecurrenceSelector, { type HabitRecurrenceValue } from './HabitRecurrenceSelector';
 
 interface Props {
@@ -32,8 +34,8 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
     custom_rule: initial?.custom_rule ?? null,
   });
   const [durationMin, setDurationMin] = useState<number>(initial?.estimated_minutes ?? 0);
-  const [showDurationPicker, setShowDurationPicker] = useState(false);
   const [isRegenerative, setIsRegenerative] = useState<boolean>(initial?.is_regenerative ?? false);
+  const [dayPart, setDayPart] = useState<DayPart | null>(initial?.day_part ?? null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +59,7 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
           custom_rule: recurrence.custom_rule,
           estimated_minutes: durationMin > 0 ? durationMin : null,
           is_regenerative: isRegenerative,
+          day_part: dayPart,
         };
         await habitsApi.update(initial.id, payload);
       } else {
@@ -70,6 +73,7 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
           custom_rule: recurrence.custom_rule,
           estimated_minutes: durationMin > 0 ? durationMin : null,
           is_regenerative: isRegenerative,
+          day_part: dayPart,
         };
         await habitsApi.create(payload);
       }
@@ -160,20 +164,7 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
       <HabitRecurrenceSelector value={recurrence} onChange={setRecurrence} />
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <button
-          type="button"
-          onClick={() => setShowDurationPicker((v) => !v)}
-          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition-colors ${
-            showDurationPicker || durationMin > 0
-              ? 'border-amber-400/60 bg-amber-400/10 text-amber-300'
-              : 'border-border bg-transparent text-muted hover:text-white'
-          }`}
-        >
-          <Clock size={11} />
-          {durationMin > 0
-            ? `${Math.floor(durationMin / 60)}h ${durationMin % 60}min`
-            : 'Czas'}
-        </button>
+        <DurationChips value={durationMin} onChange={setDurationMin} />
         <button
           type="button"
           onClick={() => setIsRegenerative((v) => !v)}
@@ -199,13 +190,7 @@ export default function HabitForm({ initial, onSaved, onCancel }: Props) {
         )}
       </div>
 
-      {showDurationPicker && (
-        <DurationPicker
-          value={durationMin}
-          onChange={setDurationMin}
-          isRegenerative={isRegenerative}
-        />
-      )}
+      <DayPartTimePicker dayPart={dayPart} onChange={setDayPart} />
 
       {error && <div className="text-xs text-accent-red">{error}</div>}
 

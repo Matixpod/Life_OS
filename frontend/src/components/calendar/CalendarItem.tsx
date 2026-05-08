@@ -60,17 +60,15 @@ export default function CalendarItem({ item, compact = false, onToggled }: Props
     }
   }
 
-  // 10-15% opacity of tag's color
   const bgOpacityHex = isDone ? 'transparent' : color + '1A';
-  
-  // Differentiate Habits (rounded-full) from Tasks (rounded-md)
-  const radiusClass = item.type === 'habit_entry' ? 'rounded-[1.25rem]' : 'rounded-md';
-  
-  // Main Quest highlight
+
   const isMainQuest = item.is_main_quest;
-  const questStyles = isMainQuest && !isDone
-    ? 'border-accent-amber/50 shadow-[0_0_8px_rgba(245,158,11,0.25)]' 
-    : 'border-border';
+  const questGlow = isMainQuest && !isDone
+    ? 'shadow-[0_0_10px_rgba(245,158,11,0.25)]'
+    : '';
+
+  const padding = compact ? 'px-3 py-2' : 'px-4 py-3';
+  const textSize = compact ? 'text-xs' : 'text-sm';
 
   return (
     <div
@@ -80,12 +78,13 @@ export default function CalendarItem({ item, compact = false, onToggled }: Props
       onKeyDown={(e) => {
         if (e.key === 'Enter') handleClick(e as unknown as React.MouseEvent);
       }}
-      className={`group flex w-full items-center gap-2 border px-2 py-1.5 text-left text-xs transition-all duration-200 cursor-pointer ${radiusClass} ${questStyles} ${
-        isDone ? 'opacity-40 hover:opacity-60' : 'hover:border-accent-blue/60'
+      className={`group flex w-full items-center gap-3 rounded-lg ${padding} ${textSize} text-left transition-all duration-200 cursor-pointer ${questGlow} ${
+        isDone ? 'opacity-40 hover:opacity-60' : 'hover:bg-opacity-80'
       }`}
       style={{
         borderLeftColor: color,
         borderLeftWidth: 3,
+        borderLeftStyle: 'solid',
         backgroundColor: bgOpacityHex,
       }}
       aria-label={`${item.type}: ${item.title}`}
@@ -117,7 +116,9 @@ export default function CalendarItem({ item, compact = false, onToggled }: Props
         </span>
       </div>
       {!compact && (
-        <span className="font-mono text-[10px] text-muted">{PRIORITY_LABEL[item.priority]}</span>
+        <span className="shrink-0 inline-flex items-center justify-center rounded-md bg-surface2 px-2 py-1 font-mono text-[10px] text-muted">
+          {PRIORITY_LABEL[item.priority]}
+        </span>
       )}
     </div>
   );

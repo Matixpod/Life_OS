@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from datetime import date as DateType
+from datetime import time
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from models.kronos import TaskCategory, TaskStatus
 from models.proposal_models import AgentTaskProposal
-from models.task_models import TaskPriority
+from models.task_models import DayPart, TaskPriority
 
 __all__ = ["CalendarDay", "CalendarItem", "CalendarItemType", "CalendarRange"]
 
@@ -36,6 +37,8 @@ class CalendarItem(BaseModel):
     project_task_id: str | None = None
     agent_route: str
     is_main_quest: bool = False
+    start_time: time | None = None
+    day_part: DayPart | None = None
 
 
 class CalendarDay(BaseModel):

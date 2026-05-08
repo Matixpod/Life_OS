@@ -1,6 +1,7 @@
 import { Save, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { Task, TaskCategory, TaskPriority, TaskUpdatePayload } from '../../types';
+import type { DayPart, Task, TaskCategory, TaskPriority, TaskUpdatePayload } from '../../types';
+import DayPartTimePicker from '../ui/DayPartTimePicker';
 import { CATEGORIES, CATEGORY_META, PRIORITY_BORDER, PRIORITY_LABEL } from './categories';
 
 interface Props {
@@ -20,6 +21,7 @@ export default function TaskEditModal({ task, onSave, onClose }: Props) {
     task.estimated_minutes != null ? String(task.estimated_minutes) : '',
   );
   const [notes, setNotes] = useState(task.notes ?? '');
+  const [dayPart, setDayPart] = useState<DayPart | null>(task.day_part ?? null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +57,7 @@ export default function TaskEditModal({ task, onSave, onClose }: Props) {
           ? Math.max(5, Math.min(480, Number(estimatedMin)))
           : null,
         notes: notes.trim() ? notes.trim() : null,
+        day_part: dayPart,
       };
       await onSave(task.id, payload);
       onClose();
@@ -176,6 +179,8 @@ export default function TaskEditModal({ task, onSave, onClose }: Props) {
             />
           </label>
         </div>
+
+        <DayPartTimePicker dayPart={dayPart} onChange={setDayPart} />
 
         <label className="block space-y-1 text-[11px] uppercase tracking-widest text-muted">
           Notatka
