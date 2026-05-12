@@ -319,6 +319,78 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
         </div>
       )}
 
+      <div className="rounded-md border border-border bg-surface2/40">
+        <button
+          type="button"
+          onClick={() => setTextInputOpen((v) => !v)}
+          aria-expanded={textInputOpen}
+          className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] uppercase tracking-widest text-muted hover:text-white"
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Sparkles size={11} className="text-accent-orange" /> Wpisz tekstowo (opcjonalne)
+          </span>
+          {textInputOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+        </button>
+        {textInputOpen && (
+          <div className="space-y-2 border-t border-border px-3 py-3">
+            <textarea
+              rows={3}
+              value={parseText}
+              onChange={(e) => setParseText(e.target.value)}
+              onKeyDown={onParseKeyDown}
+              placeholder={
+                'np.\n' +
+                'Wyciskanie na klatę 12x80kg 10x85kg 8x85kg\n' +
+                'Wiosłowanie sztangą 3x10x60kg'
+              }
+              disabled={parsing}
+              className="w-full resize-y rounded-md border border-border bg-surface2 px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent-orange disabled:opacity-50"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted">
+                Cmd/Ctrl+Enter = analizuj. Każda linia = osobne ćwiczenie.
+              </span>
+              <button
+                type="button"
+                onClick={parseAndAdd}
+                disabled={parsing || parseText.trim().length === 0}
+                className="inline-flex items-center gap-1.5 rounded-md bg-accent-orange px-3 py-1.5 text-xs font-medium text-black disabled:opacity-50"
+              >
+                {parsing ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Sparkles size={13} />
+                )}
+                {parsing ? 'Analizuję...' : 'Analizuj i dodaj'}
+              </button>
+            </div>
+            {parseFailures.length > 0 && (
+              <div className="rounded-md border border-accent-amber/40 bg-accent-amber/5 px-3 py-2 text-[11px] text-accent-amber space-y-0.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">
+                    Pominięto {parseFailures.length}{' '}
+                    {parseFailures.length === 1 ? 'linię' : 'linii'}:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setParseFailures([])}
+                    className="text-muted hover:text-white"
+                    aria-label="Wyczyść błędy"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+                {parseFailures.map((f, i) => (
+                  <div key={i} className="font-mono text-muted truncate">
+                    · {f.line}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div>
         <div className="text-[11px] uppercase tracking-widest text-muted mb-2">
           Wybierz z biblioteki
