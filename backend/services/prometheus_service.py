@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 
 from supabase import Client
 
 from core import config
 from core.supabase_client import get_user_id
-from models.schemas import ExerciseCreate, ExerciseSet, SessionCreate, SessionUpdate
-
-RECOVERY_WINDOW_HOURS = 96.0
-
+from models.schemas import (
+    ExerciseCreate,
+    ExerciseSet,
+    GroupRecoveryResponse,
+    RecoveryStateResponse,
+    SessionCreate,
+    SessionUpdate,
+)
+from services import prometheus_recovery_engine as engine
 
 # ─── Exercise library ─────────────────────────────────────────────────────────
 
@@ -416,69 +422,162 @@ def get_session_with_exercises(supabase: Client, session_id: str) -> dict:
 # ─── Recovery ─────────────────────────────────────────────────────────────────
 
 
-def _parse_iso(raw: str | None) -> datetime | None:
-    if not raw:
-        return None
-    try:
-        return datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
-def get_muscle_recovery_map(supabase: Client) -> dict[str, float]:
-    """Linear 96h decay across recent session exercises.
-
-    intensity[muscle] = max over sessions(load * max(0, 1 - elapsed_h / 96)).
-    """
+def get_recovery_state(supabase: Client) -> RecoveryStateResponse:
+    """Fetch the 7-day session window + 90-day per-exercise stats + daily_logs
+    and pass the structured inputs to the pure recovery engine."""
     user_id = get_user_id(supabase)
-    now = datetime.now(tz=UTC)
-    cutoff = now - timedelta(hours=RECOVERY_WINDOW_HOURS)
+    today = date.today()
+    window_start = today - timedelta(days=7)
+    history_start = today - timedelta(days=90)
 
+    # 1. Today's stamina pool + 8-day sleep/energy window.
+    log_res = (
+        supabase.table(config.TABLE_DAILY_LOGS)
+        .select("date, sleep_score, energy_score, stamina_pool")
+        .eq("user_id", user_id)
+        .gte("date", str(window_start))
+        .lte("date", str(today))
+        .execute()
+    )
+    daily_logs_sleep_energy: dict[date, tuple[int, int]] = {}
+    stamina_pool = 0
+    for row in log_res.data or []:
+        try:
+            d = date.fromisoformat(str(row["date"]))
+        except (TypeError, ValueError):
+            continue
+        sleep = int(row.get("sleep_score") or 50)
+        energy = int(row.get("energy_score") or 50)
+        daily_logs_sleep_energy[d] = (sleep, energy)
+        if d == today:
+            stamina_pool = int(row.get("stamina_pool") or 0)
+
+    # 2. Sessions in the 7-day fatigue window.
     sess_res = (
         supabase.table(config.TABLE_PROMETHEUS_SESSIONS)
-        .select("id, created_at")
+        .select("id, date, duration_min, avg_hr")
         .eq("user_id", user_id)
-        .gte("created_at", cutoff.isoformat())
+        .gte("date", str(window_start))
+        .lte("date", str(today))
         .execute()
     )
-    sessions = sess_res.data or []
-    if not sessions:
-        return {}
+    sess_rows = sess_res.data or []
+    if not sess_rows:
+        state = engine.compute_recovery_state(
+            today=today,
+            sessions=[],
+            history_tonnage_max_by_name={},
+            history_session_count_by_name={},
+            daily_logs_sleep_energy=daily_logs_sleep_energy,
+            stamina_pool=stamina_pool,
+        )
+        return _state_to_response(state, today)
 
-    session_created: dict[str, datetime] = {}
-    for s in sessions:
-        ts = _parse_iso(s.get("created_at"))
-        if ts is not None:
-            session_created[s["id"]] = ts
-    if not session_created:
-        return {}
+    session_dates: dict[str, date] = {}
+    session_durations: dict[str, int | None] = {}
+    session_avg_hr: dict[str, int | None] = {}
+    for row in sess_rows:
+        try:
+            sd = date.fromisoformat(str(row["date"]))
+        except (TypeError, ValueError):
+            continue
+        session_dates[row["id"]] = sd
+        session_durations[row["id"]] = row.get("duration_min")
+        session_avg_hr[row["id"]] = row.get("avg_hr")
 
+    # 3. All exercises for those sessions.
     ex_res = (
         supabase.table(config.TABLE_PROMETHEUS_SESSION_EXES)
-        .select("session_id, muscle_load")
-        .in_("session_id", list(session_created.keys()))
+        .select("session_id, exercise_name, sets, muscle_load, order_index")
+        .in_("session_id", list(session_dates.keys()))
+        .order("order_index")
         .execute()
     )
+    ex_by_session: dict[str, list[engine.SessionExerciseInput]] = defaultdict(list)
+    for row in ex_res.data or []:
+        ex_by_session[row["session_id"]].append(
+            engine.SessionExerciseInput(
+                exercise_name=row.get("exercise_name") or "Ćwiczenie",
+                sets=row.get("sets") or [],
+                muscle_load=row.get("muscle_load") or {},
+            )
+        )
 
-    intensities: dict[str, float] = {}
-    for ex in ex_res.data or []:
-        ts = session_created.get(ex["session_id"])
-        if ts is None:
-            continue
-        elapsed_h = (now - ts).total_seconds() / 3600.0
-        decay = max(0.0, 1.0 - elapsed_h / RECOVERY_WINDOW_HOURS)
-        if decay <= 0:
-            continue
-        for muscle, load in (ex.get("muscle_load") or {}).items():
-            try:
-                load_f = float(load)
-            except (TypeError, ValueError):
+    sessions = [
+        engine.SessionInput(
+            session_date=session_dates[sid],
+            duration_min=session_durations[sid],
+            avg_hr=session_avg_hr[sid],
+            exercises=ex_by_session.get(sid, []),
+        )
+        for sid in session_dates
+    ]
+
+    # 4. 90-day per-exercise tonnage stats for volume_score normalisation.
+    hist_sess_res = (
+        supabase.table(config.TABLE_PROMETHEUS_SESSIONS)
+        .select("id")
+        .eq("user_id", user_id)
+        .gte("date", str(history_start))
+        .lte("date", str(today))
+        .execute()
+    )
+    hist_ids = [r["id"] for r in (hist_sess_res.data or [])]
+    history_max: dict[str, float] = {}
+    history_count: dict[str, int] = defaultdict(int)
+    if hist_ids:
+        hist_ex_res = (
+            supabase.table(config.TABLE_PROMETHEUS_SESSION_EXES)
+            .select("exercise_name, sets")
+            .in_("session_id", hist_ids)
+            .execute()
+        )
+        for row in hist_ex_res.data or []:
+            name = row.get("exercise_name") or ""
+            if not name:
                 continue
-            value = max(0.0, min(1.0, load_f)) * decay
-            current = intensities.get(muscle, 0.0)
-            if value > current:
-                intensities[muscle] = value
-    return intensities
+            tonnage = 0.0
+            for s in row.get("sets") or []:
+                try:
+                    tonnage += float(s.get("reps", 0) or 0) * float(s.get("kg", 0.0) or 0.0)
+                except (TypeError, ValueError):
+                    continue
+            history_count[name] += 1
+            if tonnage > history_max.get(name, 0.0):
+                history_max[name] = tonnage
+
+    state = engine.compute_recovery_state(
+        today=today,
+        sessions=sessions,
+        history_tonnage_max_by_name=history_max,
+        history_session_count_by_name=dict(history_count),
+        daily_logs_sleep_energy=daily_logs_sleep_energy,
+        stamina_pool=stamina_pool,
+    )
+    return _state_to_response(state, today)
+
+
+def _state_to_response(
+    state: engine.RecoveryState, today: date
+) -> RecoveryStateResponse:
+    groups = {
+        g: GroupRecoveryResponse(
+            group=gr.group,
+            recovery_pct=gr.recovery_pct,
+            status=gr.status,
+            days_since_last=gr.days_since_last,
+        )
+        for g, gr in state.recovery_groups.items()
+    }
+    return RecoveryStateResponse(
+        date=today,
+        recovery_fine=state.recovery_fine,
+        recovery_groups=groups,
+        training_recommendation=state.training_recommendation,
+        stamina_pool=state.stamina_pool,
+        recovery_modifier_today=state.recovery_modifier_today,
+        computed_at=datetime.now(tz=UTC).isoformat(),
+    )
 
 
 # ─── Weekly reports ───────────────────────────────────────────────────────────
@@ -525,7 +624,7 @@ __all__ = [
     "get_exercise_library",
     "get_last_sets_for_exercise",
     "get_latest_weekly_report",
-    "get_muscle_recovery_map",
+    "get_recovery_state",
     "get_session_with_exercises",
     "get_sessions",
     "save_weekly_report",
