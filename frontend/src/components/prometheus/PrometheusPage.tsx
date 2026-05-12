@@ -1,16 +1,18 @@
 import { BookMarked, CalendarDays, Dumbbell, Flame, Heart, Library } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { prometheusApi } from '../../api/prometheus';
 import {
   RECOVERY_COLORS,
+  fineMapToRecoveryMap,
   type GymSession,
-  type RecoveryMap,
+  type RecoveryState,
 } from '../../types/prometheus';
 import BodyMap from './BodyMap';
 import CardioTab from './cardio/CardioTab';
 import ExerciseLibrary from './ExerciseLibrary';
 import MuscleRecoveryBar from './MuscleRecoveryBar';
 import PrometheusChat from './PrometheusChat';
+import RecoveryGroupsCard from './RecoveryGroupsCard';
 import WeeklyReportView from './WeeklyReport';
 import WeekView from './WeekView';
 import WorkoutBuilder from './WorkoutBuilder';
@@ -32,7 +34,7 @@ export default function PrometheusPage() {
   const [tab, setTab] = useState<Tab>('training');
   const [side, setSide] = useState<'front' | 'back'>('front');
   const [sessions, setSessions] = useState<GymSession[]>([]);
-  const [recovery, setRecovery] = useState<RecoveryMap>({});
+  const [recoveryState, setRecoveryState] = useState<RecoveryState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +45,7 @@ export default function PrometheusPage() {
         prometheusApi.getRecovery(),
       ]);
       setSessions(s);
-      setRecovery(r);
+      setRecoveryState(r);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Błąd ładowania');
     } finally {
@@ -58,7 +60,7 @@ export default function PrometheusPage() {
       .then(([s, r]) => {
         if (cancelled) return;
         setSessions(s);
-        setRecovery(r);
+        setRecoveryState(r);
       })
       .catch((e: unknown) => {
         if (cancelled) return;
@@ -71,6 +73,12 @@ export default function PrometheusPage() {
       cancelled = true;
     };
   }, []);
+
+  const legacyRecoveryMap = useMemo(
+    () =>
+      recoveryState ? fineMapToRecoveryMap(recoveryState.recovery_fine) : {},
+    [recoveryState],
+  );
 
   return (
     <div className="space-y-6">
@@ -136,7 +144,7 @@ export default function PrometheusPage() {
                   ))}
                 </div>
               </div>
-              <BodyMap recoveryMap={recovery} side={side} />
+              <BodyMap recoveryMap={legacyRecoveryMap} side={side} />
               <div className="mt-3 flex flex-wrap gap-2 justify-center">
                 {RECOVERY_COLORS.map((color, i) => (
                   <span
@@ -156,11 +164,12 @@ export default function PrometheusPage() {
               <div className="text-[11px] uppercase tracking-widest text-muted mb-2">
                 Regeneracja
               </div>
-              <MuscleRecoveryBar recoveryMap={recovery} />
+              <MuscleRecoveryBar recoveryMap={legacyRecoveryMap} />
             </div>
           </aside>
 
           <section className="space-y-4">
+            {recoveryState && <RecoveryGroupsCard state={recoveryState} />}
             <WorkoutBuilder onSessionSaved={() => void refresh()} />
             <WorkoutLog sessions={sessions} onChanged={() => void refresh()} />
           </section>
@@ -174,7 +183,7 @@ export default function PrometheusPage() {
             <div className="text-[11px] uppercase tracking-widest text-muted mb-2">
               Aktualna intensywność
             </div>
-            <MuscleRecoveryBar recoveryMap={recovery} />
+            <MuscleRecoveryBar recoveryMap={legacyRecoveryMap} />
           </div>
         </div>
       ) : tab === 'library' ? (
