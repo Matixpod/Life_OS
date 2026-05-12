@@ -466,3 +466,31 @@ class FatSummary(BaseModel):
     # X g · 🏋️ siłowo Y g" so the user can see strength is contributing.
     week_cardio_grams: float = 0.0
     week_strength_grams: float = 0.0
+
+
+# ─── PROMETHEUS Recovery Engine ───────────────────────────────────────────
+
+
+MuscleGroup = Literal[
+    "legs", "back", "chest", "shoulders", "triceps",
+    "core", "biceps", "forearms", "rear_delt",
+]
+MuscleRecoveryStatus = Literal["ready", "partial", "fatigued"]
+TrainingRecommendation = Literal["rest", "light", "avoid_fatigued", "train"]
+
+
+class GroupRecoveryResponse(BaseModel):
+    group: MuscleGroup
+    recovery_pct: int = Field(ge=0, le=100)
+    status: MuscleRecoveryStatus
+    days_since_last: int = Field(ge=0)
+
+
+class RecoveryStateResponse(BaseModel):
+    date: DateType
+    recovery_fine: dict[str, int] = Field(default_factory=dict)
+    recovery_groups: dict[MuscleGroup, GroupRecoveryResponse] = Field(default_factory=dict)
+    training_recommendation: TrainingRecommendation = "train"
+    stamina_pool: int = 0
+    recovery_modifier_today: float = 0.5
+    computed_at: str
