@@ -180,6 +180,30 @@ async def create_session(supabase: Client, payload: SessionCreate) -> dict:
     else:
         session["exercises"] = []
 
+    # Upsert reusable workout template by name. Best-effort: any failure
+    # here must not break session creation.
+    save_as_template = getattr(payload, "save_as_template", True)
+    label_clean = (payload.label or "").strip()
+    if save_as_template and label_clean and payload.exercises:
+        try:
+            from models.schemas import WorkoutTemplateExerciseInput
+            from services import workout_template_service
+
+            template_exercises = [
+                WorkoutTemplateExerciseInput(
+                    exercise_name=ex.exercise_name,
+                    order_index=idx,
+                    target_sets=max(1, len(ex.sets) or 3),
+                    muscle_load=ex.muscle_load or {},
+                )
+                for idx, ex in enumerate(payload.exercises)
+            ]
+            workout_template_service.upsert_template(
+                supabase, name=label_clean, exercises=template_exercises
+            )
+        except Exception:
+            pass
+
     # Dashboard compatibility — also write a basic workout_sessions row
     try:
         supabase.table(config.TABLE_WORKOUTS).insert(

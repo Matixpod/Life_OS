@@ -98,6 +98,7 @@ def _row_to_task(row: dict) -> Task:
         habit_id=row.get("habit_id"),
         project_task_id=row.get("project_task_id"),
         workout_template_label=row.get("workout_template_label"),
+        workout_template_id=row.get("workout_template_id"),
         is_main_quest=bool(row.get("is_main_quest")),
         is_regenerative=bool(row.get("is_regenerative")),
         ap_cost=row.get("ap_cost"),
@@ -173,6 +174,7 @@ def create_task(supabase: Client, payload: TaskCreate) -> Task:
         "day_part": inferred_part,
         "task_type": payload.task_type,
         "workout_template_label": payload.workout_template_label,
+        "workout_template_id": payload.workout_template_id,
     }
     # `daily_tasks.date` is currently NOT NULL (migration 003). When the
     # column is later relaxed to support backlog, omitting `date` here
@@ -280,14 +282,19 @@ async def complete_task(
     post_streak = _streak_for_category(supabase, cat_raw)
 
     # Workout daily-task → spawn a PROMETHEUS session by copying exercises
-    # from the most recent strength session sharing this label. Best-effort:
-    # any failure is swallowed so the task still ends up as `done`.
+    # from the linked template (preferred) or the most recent strength
+    # session sharing this label. Best-effort: any failure is swallowed so
+    # the task still ends up as `done`.
     if updated.get("task_type") == "workout":
         label = updated.get("workout_template_label") or row.get("title") or ""
+        template_id = updated.get("workout_template_id") or row.get(
+            "workout_template_id"
+        )
         try:
             await _auto_create_session_from_label(
                 supabase,
                 label=str(label),
+                template_id=template_id,
                 session_date=str(updated.get("date") or row.get("date") or ""),
                 duration_min=workout_meta.duration_min if workout_meta else None,
                 avg_hr=workout_meta.avg_hr if workout_meta else None,
@@ -309,20 +316,21 @@ async def _auto_create_session_from_label(
     supabase: Client,
     *,
     label: str,
+    template_id: str | None = None,
     session_date: str,
     duration_min: int | None,
     avg_hr: int | None,
 ) -> None:
-    """Create a `prometheus_session` from the most recent matching session.
+    """Create a `prometheus_session` from the linked template or label.
 
-    Resolution: look up the latest `prometheus_session` for this user with
-    the same `label`, copy its exercises (and their last-recorded sets),
-    and insert as a new session — with the user-supplied `duration_min` /
-    `avg_hr` so the kcal analyser runs.
-
-    If no historical session matches, we still create an empty session
-    (label + duration + HR) so the user gets kcal numbers; PROMETHEUS will
-    just have nothing to copy from.
+    Resolution order:
+      1. If ``template_id`` is set, fetch ``workout_template_exercises``
+         and for each exercise pull its last performed sets via
+         ``workout_template_service`` (same helper used by GET /{id}).
+      2. Else, fall back to the legacy behaviour: copy exercises from the
+         most recent ``prometheus_session`` with the same ``label``.
+      3. If nothing matches, still create an empty session so the kcal
+         analyser runs on the user-supplied duration/HR.
     """
     from datetime import date as _DateType
 
@@ -335,49 +343,80 @@ async def _auto_create_session_from_label(
     )
     from services import prometheus_service
 
-    if not label:
+    if not label and not template_id:
         return
 
     user_id = get_user_id(supabase)
-    sess_res = (
-        supabase.table(config.TABLE_PROMETHEUS_SESSIONS)
-        .select("id, created_at")
-        .eq("user_id", user_id)
-        .eq("label", label)
-        .order("created_at", desc=True)
-        .limit(1)
-        .execute()
-    )
-
     exercises: list[SessionExerciseCreate] = []
-    template_session = (sess_res.data or [None])[0]
-    if template_session:
-        ex_res = (
-            supabase.table(config.TABLE_PROMETHEUS_SESSION_EXES)
-            .select("exercise_name, sets, muscle_load, order_index")
-            .eq("session_id", template_session["id"])
-            .order("order_index")
+
+    if template_id:
+        from services import workout_template_service
+
+        template = workout_template_service.get_template(supabase, template_id)
+        if template:
+            for ex in template.get("exercises") or []:
+                last_sets_raw = ex.get("last_sets") or []
+                target_sets = int(ex.get("target_sets") or 3)
+                sets: list[ExerciseSet] = []
+                for s in last_sets_raw:
+                    try:
+                        sets.append(
+                            ExerciseSet(
+                                reps=int(s.get("reps", 0) or 0),
+                                kg=float(s.get("kg", 0.0) or 0.0),
+                            )
+                        )
+                    except (TypeError, ValueError):
+                        continue
+                # Pad with empty target sets if history is short.
+                while len(sets) < target_sets:
+                    sets.append(ExerciseSet(reps=0, kg=0.0))
+                exercises.append(
+                    SessionExerciseCreate(
+                        exercise_name=ex.get("exercise_name") or "Ćwiczenie",
+                        sets=sets[:max(target_sets, len(sets))],
+                        muscle_load=ex.get("muscle_load") or {},
+                    )
+                )
+
+    if not exercises and label:
+        sess_res = (
+            supabase.table(config.TABLE_PROMETHEUS_SESSIONS)
+            .select("id, created_at")
+            .eq("user_id", user_id)
+            .eq("label", label)
+            .order("created_at", desc=True)
+            .limit(1)
             .execute()
         )
-        for ex in ex_res.data or []:
-            sets: list[ExerciseSet] = []
-            for s in ex.get("sets") or []:
-                try:
-                    sets.append(
-                        ExerciseSet(
-                            reps=int(s.get("reps", 0) or 0),
-                            kg=float(s.get("kg", 0.0) or 0.0),
-                        )
-                    )
-                except (TypeError, ValueError):
-                    continue
-            exercises.append(
-                SessionExerciseCreate(
-                    exercise_name=ex.get("exercise_name") or "Ćwiczenie",
-                    sets=sets,
-                    muscle_load=ex.get("muscle_load") or {},
-                )
+        template_session = (sess_res.data or [None])[0]
+        if template_session:
+            ex_res = (
+                supabase.table(config.TABLE_PROMETHEUS_SESSION_EXES)
+                .select("exercise_name, sets, muscle_load, order_index")
+                .eq("session_id", template_session["id"])
+                .order("order_index")
+                .execute()
             )
+            for ex in ex_res.data or []:
+                sets: list[ExerciseSet] = []
+                for s in ex.get("sets") or []:
+                    try:
+                        sets.append(
+                            ExerciseSet(
+                                reps=int(s.get("reps", 0) or 0),
+                                kg=float(s.get("kg", 0.0) or 0.0),
+                            )
+                        )
+                    except (TypeError, ValueError):
+                        continue
+                exercises.append(
+                    SessionExerciseCreate(
+                        exercise_name=ex.get("exercise_name") or "Ćwiczenie",
+                        sets=sets,
+                        muscle_load=ex.get("muscle_load") or {},
+                    )
+                )
 
     try:
         target_date = _DateType.fromisoformat(session_date)
@@ -390,6 +429,8 @@ async def _auto_create_session_from_label(
         exercises=exercises,
         duration_min=duration_min,
         avg_hr=avg_hr,
+        # The session already came from a template — don't recreate it.
+        save_as_template=False,
     )
     await prometheus_service.create_session(supabase, payload)
 

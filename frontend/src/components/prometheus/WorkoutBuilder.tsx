@@ -1,6 +1,6 @@
-import { ChevronDown, ChevronUp, Loader2, Plus, Save, Search, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, FolderOpen, Loader2, Plus, Save, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { prometheusApi } from '../../api/prometheus';
+import { prometheusApi, workoutTemplatesApi } from '../../api/prometheus';
 import {
   MUSCLE_LABELS_PL,
   intensityLabel,
@@ -9,6 +9,7 @@ import {
   type MuscleKey,
   type RecoveryMap,
   type SessionExerciseInput,
+  type WorkoutTemplate,
 } from '../../types/prometheus';
 import SetEditor from './SetEditor';
 
@@ -28,22 +29,18 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function deriveLabel(items: BuilderItem[]): string {
-  if (items.length === 0) return 'Trening';
-  if (items.length === 1) return items[0].exercise_name;
-  if (items.length === 2) return `${items[0].exercise_name} + ${items[1].exercise_name}`;
-  return `${items[0].exercise_name} + ${items[1].exercise_name} +${items.length - 2}`;
-}
-
 function summariseSets(sets: ExerciseSet[]): string {
   return sets.map((s) => `${s.reps}×${s.kg}kg`).join(', ');
 }
 
 export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) {
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [search, setSearch] = useState('');
   const [items, setItems] = useState<BuilderItem[]>([]);
+  const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hrOpen, setHrOpen] = useState(false);
   const [duration, setDuration] = useState<string>('');
@@ -51,10 +48,11 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
 
   useEffect(() => {
     let cancelled = false;
-    prometheusApi
-      .getExercises()
-      .then((rows) => {
-        if (!cancelled) setExercises(rows);
+    Promise.all([prometheusApi.getExercises(), workoutTemplatesApi.list()])
+      .then(([rows, tpls]) => {
+        if (cancelled) return;
+        setExercises(rows);
+        setTemplates(tpls);
       })
       .catch((e: unknown) => {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Błąd biblioteki');
@@ -96,6 +94,38 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
     }
   };
 
+  const loadTemplate = async (templateId: string) => {
+    if (!templateId) return;
+    setLoadingTemplate(true);
+    setError(null);
+    try {
+      const template = await workoutTemplatesApi.get(templateId);
+      setName(template.name);
+      const next: BuilderItem[] = template.exercises.map((ex) => {
+        const libEntry = exercises.find(
+          (e) => e.name.toLowerCase() === ex.exercise_name.toLowerCase(),
+        );
+        const baseSets =
+          ex.last_sets && ex.last_sets.length > 0
+            ? ex.last_sets
+            : Array.from({ length: ex.target_sets || 3 }, () => ({ reps: 0, kg: 0 }));
+        return {
+          exercise_id: libEntry?.id ?? `tpl:${ex.id}`,
+          exercise_name: ex.exercise_name,
+          muscle_load: ex.muscle_load,
+          sets: baseSets,
+          last_sets_label:
+            ex.last_sets && ex.last_sets.length > 0 ? summariseSets(ex.last_sets) : null,
+        };
+      });
+      setItems(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Nie udało się załadować planu');
+    } finally {
+      setLoadingTemplate(false);
+    }
+  };
+
   const updateSets = (exerciseId: string, sets: ExerciseSet[]) => {
     setItems((prev) =>
       prev
@@ -109,6 +139,7 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
   };
 
   const validate = (): string | null => {
+    if (!name.trim()) return 'Nazwa treningu jest wymagana';
     if (items.length === 0) return 'Dodaj choć jedno ćwiczenie';
     for (const it of items) {
       if (it.sets.length === 0) return 'Każde ćwiczenie potrzebuje co najmniej jednej serii';
@@ -135,15 +166,24 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
       }));
       await prometheusApi.createSession({
         date: todayIso(),
-        label: deriveLabel(items),
+        label: name.trim(),
         exercises: payload,
+        save_as_template: true,
         ...(Number(duration) > 0 ? { duration_min: Number(duration) } : {}),
         ...(Number(avgHr) > 0 ? { avg_hr: Number(avgHr) } : {}),
       });
       setItems([]);
+      setName('');
       setSearch('');
       setDuration('');
       setAvgHr('');
+      // Refresh templates list so the newly saved one shows up next time.
+      try {
+        const tpls = await workoutTemplatesApi.list();
+        setTemplates(tpls);
+      } catch {
+        /* non-fatal */
+      }
       onSessionSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Nie udało się zapisać');
@@ -154,6 +194,42 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4 space-y-4">
+      <div>
+        <label className="block text-[11px] uppercase tracking-widest text-muted mb-1.5">
+          Nazwa treningu <span className="text-accent-red">*</span>
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="np. Push A"
+          className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm text-white placeholder:text-muted focus:outline-none focus:border-accent-orange"
+        />
+      </div>
+
+      {templates.length > 0 && (
+        <div>
+          <label className="block text-[11px] uppercase tracking-widest text-muted mb-1.5">
+            <span className="inline-flex items-center gap-1.5">
+              <FolderOpen size={11} /> Załaduj zapisany trening
+            </span>
+          </label>
+          <select
+            value=""
+            onChange={(e) => loadTemplate(e.target.value)}
+            disabled={loadingTemplate}
+            className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm text-white focus:outline-none focus:border-accent-orange disabled:opacity-50"
+          >
+            <option value="">— wybierz —</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name} ({t.exercises.length} ćw.)
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div>
         <div className="text-[11px] uppercase tracking-widest text-muted mb-2">
           Wybierz z biblioteki
@@ -325,7 +401,7 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
       <button
         type="button"
         onClick={save}
-        disabled={saving || items.length === 0}
+        disabled={saving || items.length === 0 || !name.trim()}
         className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-accent-orange px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
       >
         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}

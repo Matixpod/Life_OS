@@ -96,6 +96,7 @@ class TaskCreate(BaseModel):
     day_part: DayPart | None = None
     task_type: Literal["task", "habit_entry", "project_task", "workout"] = "task"
     workout_template_label: str | None = Field(default=None, max_length=200)
+    workout_template_id: str | None = None
 
 
 class TaskUpdate(BaseModel):
@@ -143,6 +144,7 @@ class Task(BaseModel):
     habit_id: str | None = None
     project_task_id: str | None = None
     workout_template_label: str | None = None
+    workout_template_id: str | None = None
     is_main_quest: bool = False
     is_regenerative: bool = False
     ap_cost: int | None = None  # generated column: equals estimated_minutes

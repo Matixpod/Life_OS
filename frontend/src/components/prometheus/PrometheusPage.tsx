@@ -1,4 +1,4 @@
-import { CalendarDays, Dumbbell, Flame, Heart, Library } from 'lucide-react';
+import { BookMarked, CalendarDays, Dumbbell, Flame, Heart, Library } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { prometheusApi } from '../../api/prometheus';
 import {
@@ -17,12 +17,14 @@ import WeeklyReportView from './WeeklyReport';
 import WeekView from './WeekView';
 import WorkoutBuilder from './WorkoutBuilder';
 import WorkoutLog from './WorkoutLog';
+import WorkoutTemplatesLibrary from './WorkoutTemplatesLibrary';
 
-type Tab = 'training' | 'week' | 'prometheus' | 'library' | 'cardio';
+type Tab = 'training' | 'plans' | 'week' | 'prometheus' | 'library' | 'cardio';
 type InputMode = 'text' | 'library';
 
 const TABS: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
   { id: 'training', label: 'Trening', icon: Dumbbell },
+  { id: 'plans', label: 'Plany', icon: BookMarked },
   { id: 'week', label: 'Tygodnik', icon: CalendarDays },
   { id: 'prometheus', label: 'PROMETHEUS', icon: Flame },
   { id: 'cardio', label: 'Cardio', icon: Heart },
@@ -220,6 +222,8 @@ export default function PrometheusPage() {
             <WorkoutLog sessions={sessions} onChanged={() => void refresh()} />
           </section>
         </div>
+      ) : tab === 'plans' ? (
+        <WorkoutTemplatesLibrary onStartTraining={() => setTab('training')} />
       ) : tab === 'week' ? (
         <div className="space-y-4">
           <WeekView sessions={sessions} />

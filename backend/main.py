@@ -25,6 +25,7 @@ from routers import (
     tasks,
     user,
     workout,
+    workout_templates,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
@@ -65,3 +66,4 @@ app.include_router(proposals.router, prefix="/api/v1")
 app.include_router(calendar.router, prefix="/api/v1")
 app.include_router(daily_system.router, prefix="/api/v1")
 app.include_router(prometheus.router, prefix="/api/v1")
+app.include_router(workout_templates.router, prefix="/api/v1")

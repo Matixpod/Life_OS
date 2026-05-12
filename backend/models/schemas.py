@@ -264,6 +264,54 @@ class SessionCreate(BaseModel):
     exercises: list[SessionExerciseCreate] = Field(default_factory=list)
     duration_min: int | None = None
     avg_hr: int | None = None
+    # When true (default), saving the session also upserts a reusable
+    # workout template under `label`. The UI uses this to honour the
+    # "Save workout requires a name" UX.
+    save_as_template: bool = True
+
+
+# ─── Workout templates ────────────────────────────────────────────────────────
+
+
+class WorkoutTemplateExerciseInput(BaseModel):
+    exercise_name: str
+    order_index: int = 0
+    target_sets: int = Field(ge=1, le=50, default=3)
+    muscle_load: dict[str, float] = Field(default_factory=dict)
+
+
+class WorkoutTemplateCreate(BaseModel):
+    name: str
+    exercises: list[WorkoutTemplateExerciseInput] = Field(default_factory=list)
+
+
+class WorkoutTemplateUpdate(BaseModel):
+    name: str | None = None
+    exercises: list[WorkoutTemplateExerciseInput] | None = None
+
+
+class WorkoutTemplateExercise(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    template_id: str
+    exercise_name: str
+    order_index: int = 0
+    target_sets: int = 3
+    muscle_load: dict[str, float] = Field(default_factory=dict)
+    last_sets: list[ExerciseSet] = Field(default_factory=list)
+
+
+class WorkoutTemplate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    created_at: str
+    updated_at: str
+    exercises: list[WorkoutTemplateExercise] = Field(default_factory=list)
+
+
+class WorkoutTemplateScheduleRequest(BaseModel):
+    dates: list[DateType] = Field(default_factory=list)
 
 
 class ParseExerciseRequest(BaseModel):

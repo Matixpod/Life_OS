@@ -1,6 +1,5 @@
-import { CalendarPlus, Dumbbell, Pencil, Trash2 } from 'lucide-react';
+import { Dumbbell, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { tasksApi } from '../../api/tasks';
 import { prometheusApi } from '../../api/prometheus';
 import type { GymSession } from '../../types/prometheus';
 import SessionEditModal from './SessionEditModal';
@@ -45,37 +44,6 @@ export default function WorkoutLog({ sessions, onChanged }: WorkoutLogProps) {
     }
   };
 
-  const schedule = async (s: GymSession): Promise<void> => {
-    const today = new Date();
-    const defaultDate = new Date(today.getTime() + 86_400_000) // tomorrow
-      .toISOString()
-      .slice(0, 10);
-    const raw = window.prompt(
-      `Zaplanuj „${s.label || 'Trening'}" na datę (YYYY-MM-DD):`,
-      defaultDate,
-    );
-    if (!raw) return;
-    const target = raw.trim().slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(target)) {
-      setError('Nieprawidłowa data — użyj formatu YYYY-MM-DD.');
-      return;
-    }
-    try {
-      await tasksApi.createTask({
-        title: s.label || 'Trening',
-        category: 'health',
-        priority: 'medium',
-        scheduled_date: target,
-        estimated_minutes: s.duration_min ?? 60,
-        task_type: 'workout',
-        workout_template_label: s.label || 'Trening',
-      });
-      onChanged();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Nie udało się zaplanować');
-    }
-  };
-
   const renderRow = (s: GymSession, compact = false) => (
     <SessionRow
       key={s.id}
@@ -86,7 +54,6 @@ export default function WorkoutLog({ sessions, onChanged }: WorkoutLogProps) {
       onCancelDelete={() => setConfirmId(null)}
       onConfirmDelete={() => remove(s.id)}
       onEdit={() => setEditing(s)}
-      onSchedule={() => void schedule(s)}
     />
   );
 
@@ -144,7 +111,6 @@ interface SessionRowProps {
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
   onEdit: () => void;
-  onSchedule: () => void;
 }
 
 function SessionRow({
@@ -155,7 +121,6 @@ function SessionRow({
   onCancelDelete,
   onConfirmDelete,
   onEdit,
-  onSchedule,
 }: SessionRowProps) {
   return (
     <li className="rounded-md border border-border bg-surface2 p-3">
@@ -188,14 +153,6 @@ function SessionRow({
             </>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={onSchedule}
-                className="text-muted hover:text-accent-orange"
-                title="Zaplanuj na dzień (utworzy zadanie typu workout)"
-              >
-                <CalendarPlus size={13} />
-              </button>
               <button
                 type="button"
                 onClick={onEdit}

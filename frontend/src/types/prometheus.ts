@@ -218,6 +218,44 @@ export interface SessionCreate {
   exercises: SessionExerciseInput[];
   duration_min?: number;
   avg_hr?: number;
+  save_as_template?: boolean;
+}
+
+// ─── Workout templates ─────────────────────────────────────────────────────
+
+export interface WorkoutTemplateExercise {
+  id: string;
+  template_id: string;
+  exercise_name: string;
+  order_index: number;
+  target_sets: number;
+  muscle_load: RecoveryMap;
+  last_sets: ExerciseSet[];
+}
+
+export interface WorkoutTemplate {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  exercises: WorkoutTemplateExercise[];
+}
+
+export interface WorkoutTemplateExerciseInput {
+  exercise_name: string;
+  order_index?: number;
+  target_sets?: number;
+  muscle_load?: RecoveryMap;
+}
+
+export interface WorkoutTemplateCreatePayload {
+  name: string;
+  exercises: WorkoutTemplateExerciseInput[];
+}
+
+export interface WorkoutTemplateUpdatePayload {
+  name?: string;
+  exercises?: WorkoutTemplateExerciseInput[];
 }
 
 export interface SessionUpdatePayload {
