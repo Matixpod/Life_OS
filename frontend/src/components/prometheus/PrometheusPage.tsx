@@ -4,12 +4,10 @@ import { prometheusApi } from '../../api/prometheus';
 import {
   RECOVERY_COLORS,
   type GymSession,
-  type ParsedExercise,
   type RecoveryMap,
 } from '../../types/prometheus';
 import BodyMap from './BodyMap';
 import CardioTab from './cardio/CardioTab';
-import ExerciseInput from './ExerciseInput';
 import ExerciseLibrary from './ExerciseLibrary';
 import MuscleRecoveryBar from './MuscleRecoveryBar';
 import PrometheusChat from './PrometheusChat';
@@ -20,7 +18,6 @@ import WorkoutLog from './WorkoutLog';
 import WorkoutTemplatesLibrary from './WorkoutTemplatesLibrary';
 
 type Tab = 'training' | 'plans' | 'week' | 'prometheus' | 'library' | 'cardio';
-type InputMode = 'text' | 'library';
 
 const TABS: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
   { id: 'training', label: 'Trening', icon: Dumbbell },
@@ -31,19 +28,6 @@ const TABS: { id: Tab; label: string; icon: typeof Dumbbell }[] = [
   { id: 'library', label: 'Biblioteka', icon: Library },
 ];
 
-const INPUT_MODE_KEY = 'prometheus_input_mode';
-
-function readInputMode(): InputMode {
-  if (typeof window === 'undefined' || !window.localStorage) return 'text';
-  const v = window.localStorage.getItem(INPUT_MODE_KEY);
-  return v === 'library' ? 'library' : 'text';
-}
-
-function writeInputMode(mode: InputMode): void {
-  if (typeof window === 'undefined' || !window.localStorage) return;
-  window.localStorage.setItem(INPUT_MODE_KEY, mode);
-}
-
 export default function PrometheusPage() {
   const [tab, setTab] = useState<Tab>('training');
   const [side, setSide] = useState<'front' | 'back'>('front');
@@ -51,15 +35,6 @@ export default function PrometheusPage() {
   const [recovery, setRecovery] = useState<RecoveryMap>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [inputMode, setInputMode] = useState<InputMode>(() => readInputMode());
-
-  const toggleInputMode = useCallback(() => {
-    setInputMode((prev) => {
-      const next: InputMode = prev === 'text' ? 'library' : 'text';
-      writeInputMode(next);
-      return next;
-    });
-  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -96,22 +71,6 @@ export default function PrometheusPage() {
       cancelled = true;
     };
   }, []);
-
-  const onExerciseAdded = useCallback(
-    (parsed: ParsedExercise) => {
-      // Optimistic recovery bump
-      setRecovery((prev) => {
-        const next = { ...prev };
-        for (const [k, v] of Object.entries(parsed.muscle_load)) {
-          const current = next[k as keyof RecoveryMap] ?? 0;
-          if (v > current) next[k as keyof RecoveryMap] = v;
-        }
-        return next;
-      });
-      void refresh();
-    },
-    [refresh],
-  );
 
   return (
     <div className="space-y-6">
@@ -202,23 +161,7 @@ export default function PrometheusPage() {
           </aside>
 
           <section className="space-y-4">
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={toggleInputMode}
-                className="rounded-md border border-border bg-surface2 px-3 py-1.5 text-xs text-muted hover:border-accent-orange hover:text-white transition-colors"
-                title="Zmień sposób dodawania ćwiczeń"
-              >
-                {inputMode === 'text'
-                  ? '📋 Wybierz z biblioteki'
-                  : '✏️ Wpisz tekstowo'}
-              </button>
-            </div>
-            {inputMode === 'text' ? (
-              <ExerciseInput onExerciseAdded={onExerciseAdded} />
-            ) : (
-              <WorkoutBuilder onSessionSaved={() => void refresh()} />
-            )}
+            <WorkoutBuilder onSessionSaved={() => void refresh()} />
             <WorkoutLog sessions={sessions} onChanged={() => void refresh()} />
           </section>
         </div>
