@@ -23,6 +23,7 @@ from models.schemas import (
     ParseExerciseRequest,
     ParseExerciseResponse,
     PrometheusChatRequest,
+    RecoveryStateResponse,
     SessionCreate,
     SessionUpdate,
 )
@@ -191,12 +192,12 @@ async def patch_session(
 # ─── Recovery ─────────────────────────────────────────────────────────────────
 
 
-@router.get("/recovery")
+@router.get("/recovery", response_model=RecoveryStateResponse)
 async def get_recovery(
     supabase: Client = Depends(get_supabase),
-) -> dict[str, float]:
+) -> RecoveryStateResponse:
     try:
-        return prometheus_service.get_muscle_recovery_map(supabase)
+        return prometheus_service.get_recovery_state(supabase)
     except Exception as e:
         logger.exception("prometheus.recovery error")
         raise HTTPException(status_code=500, detail=str(e)) from e
