@@ -1,5 +1,16 @@
-import { ChevronDown, ChevronUp, FolderOpen, Loader2, Plus, Save, Search, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  ChevronDown,
+  ChevronUp,
+  FolderOpen,
+  Loader2,
+  Plus,
+  Save,
+  Search,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { prometheusApi, workoutTemplatesApi } from '../../api/prometheus';
 import {
   MUSCLE_LABELS_PL,
@@ -7,6 +18,7 @@ import {
   type Exercise,
   type ExerciseSet,
   type MuscleKey,
+  type ParsedExercise,
   type RecoveryMap,
   type SessionExerciseInput,
   type WorkoutTemplate,
@@ -45,6 +57,12 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
   const [hrOpen, setHrOpen] = useState(false);
   const [duration, setDuration] = useState<string>('');
   const [avgHr, setAvgHr] = useState<string>('');
+  const [textInputOpen, setTextInputOpen] = useState(false);
+  const [parseText, setParseText] = useState('');
+  const [parsing, setParsing] = useState(false);
+  const [parseFailures, setParseFailures] = useState<
+    Array<{ line: string; error: string }>
+  >([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,6 +141,77 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
       setError(e instanceof Error ? e.message : 'Nie udało się załadować planu');
     } finally {
       setLoadingTemplate(false);
+    }
+  };
+
+  const parseAndAdd = async () => {
+    const lines = parseText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return;
+    setParsing(true);
+    setError(null);
+    setParseFailures([]);
+    try {
+      const results = await Promise.all(
+        lines.map(async (line) => {
+          try {
+            const parsed = await prometheusApi.parseExercise(line);
+            return { ok: true as const, line, parsed };
+          } catch (e) {
+            return {
+              ok: false as const,
+              line,
+              error: e instanceof Error ? e.message : 'Błąd analizy',
+            };
+          }
+        }),
+      );
+
+      const ok: ParsedExercise[] = [];
+      const bad: Array<{ line: string; error: string }> = [];
+      for (const r of results) {
+        if (r.ok) ok.push(r.parsed);
+        else bad.push({ line: r.line, error: r.error });
+      }
+
+      if (ok.length > 0) {
+        setItems((prev) => {
+          const next = [...prev];
+          for (const p of ok) {
+            const libEntry = exercises.find(
+              (e) => e.name.toLowerCase() === p.exercise_name.toLowerCase(),
+            );
+            const id = libEntry?.id ?? `parsed:${p.exercise_name.toLowerCase()}`;
+            if (next.some((it) => it.exercise_id === id)) continue;
+            next.push({
+              exercise_id: id,
+              exercise_name: libEntry?.name ?? p.exercise_name,
+              muscle_load: libEntry?.muscle_load ?? p.muscle_load,
+              sets: p.sets.length > 0 ? p.sets : [{ reps: 0, kg: 0 }],
+              last_sets_label: null,
+            });
+          }
+          return next;
+        });
+        setParseText('');
+      }
+      setParseFailures(bad);
+      if (ok.length === 0 && bad.length > 0) {
+        setError('Żadna linia nie została poprawnie zinterpretowana.');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Błąd analizy');
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const onParseKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      void parseAndAdd();
     }
   };
 
