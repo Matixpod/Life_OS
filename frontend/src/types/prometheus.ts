@@ -381,3 +381,119 @@ export function fatGramsAnalogy(grams: number): string {
   if (grams < 100) return `≈ ${(grams / 100).toFixed(1)} kostki masła`;
   return `≈ ${(grams / 100).toFixed(1)} kostek masła`;
 }
+
+// ─── Recovery engine ───────────────────────────────────────────────────────
+
+export type MuscleGroup =
+  | 'legs'
+  | 'back'
+  | 'chest'
+  | 'shoulders'
+  | 'triceps'
+  | 'core'
+  | 'biceps'
+  | 'forearms'
+  | 'rear_delt';
+
+export type MuscleRecoveryStatus = 'ready' | 'partial' | 'fatigued';
+export type TrainingRecommendation = 'rest' | 'light' | 'avoid_fatigued' | 'train';
+
+export const MUSCLE_GROUP_OF: Record<MuscleKey, MuscleGroup> = {
+  chest: 'chest',
+  front_delt: 'shoulders',
+  rear_delt: 'rear_delt',
+  biceps: 'biceps',
+  triceps: 'triceps',
+  forearms: 'forearms',
+  abs: 'core',
+  obliques: 'core',
+  traps: 'back',
+  lats: 'back',
+  rhomboids: 'back',
+  lower_back: 'back',
+  glutes: 'legs',
+  quads: 'legs',
+  hamstrings: 'legs',
+  calves: 'legs',
+};
+
+export const MUSCLE_GROUP_LABELS_PL: Record<MuscleGroup, string> = {
+  legs: 'Nogi',
+  back: 'Plecy',
+  chest: 'Klatka',
+  shoulders: 'Barki',
+  triceps: 'Triceps',
+  core: 'Brzuch',
+  biceps: 'Biceps',
+  forearms: 'Przedramiona',
+  rear_delt: 'Tylne aktony',
+};
+
+export const STATUS_COLORS: Record<MuscleRecoveryStatus, string> = {
+  ready: '#22C55E',
+  partial: '#F59E0B',
+  fatigued: '#EF4444',
+};
+
+export const STATUS_LABELS_PL: Record<MuscleRecoveryStatus, string> = {
+  ready: 'Gotowe',
+  partial: 'Częściowo',
+  fatigued: 'Zmęczone',
+};
+
+export const TRAINING_REC_META: Record<
+  TrainingRecommendation,
+  { label: string; color: string; tone: string }
+> = {
+  rest: {
+    label: 'Odpoczynek',
+    color: '#EF4444',
+    tone: 'Stamina za niska — dziś bez treningu.',
+  },
+  light: {
+    label: 'Lekka aktywność',
+    color: '#F59E0B',
+    tone: 'Mobilność, spacer, rozciąganie.',
+  },
+  avoid_fatigued: {
+    label: 'Trenuj — omiń zmęczone',
+    color: '#3B82F6',
+    tone: 'Wybierz partie ze statusem READY.',
+  },
+  train: {
+    label: 'Trenuj',
+    color: '#10B981',
+    tone: 'Wszystkie partie gotowe.',
+  },
+};
+
+export interface GroupRecovery {
+  group: MuscleGroup;
+  recovery_pct: number;
+  status: MuscleRecoveryStatus;
+  days_since_last: number;
+}
+
+export interface RecoveryState {
+  date: string;
+  recovery_fine: Partial<Record<MuscleKey, number>>;
+  recovery_groups: Partial<Record<MuscleGroup, GroupRecovery>>;
+  training_recommendation: TrainingRecommendation;
+  stamina_pool: number;
+  recovery_modifier_today: number;
+  computed_at: string;
+}
+
+/** Convert a 0-100 `recovery_fine` map into the legacy 0-1 RecoveryMap so the
+ * existing BodyMap + MuscleRecoveryBar render unchanged. */
+export function fineMapToRecoveryMap(
+  fine: Partial<Record<MuscleKey, number>>,
+): RecoveryMap {
+  const out: RecoveryMap = {};
+  for (const [key, pct] of Object.entries(fine) as [MuscleKey, number][]) {
+    const load = Math.max(0, Math.min(1, (100 - pct) / 100));
+    if (load < 0.05) continue;
+    out[key] = load;
+  }
+  return out;
+}

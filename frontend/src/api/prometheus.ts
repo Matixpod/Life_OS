@@ -8,7 +8,7 @@ import type {
   FatSummary,
   GymSession,
   ParsedExercise,
-  RecoveryMap,
+  RecoveryState,
   SessionCreate,
   SessionUpdatePayload,
   WeeklyReport,
@@ -122,8 +122,8 @@ export const prometheusApi = {
   getSessions: (daysBack = 30): Promise<GymSession[]> =>
     getJson<GymSession[]>(`${ROOT}/sessions?days_back=${daysBack}`),
 
-  getRecovery: (): Promise<RecoveryMap> =>
-    getJson<RecoveryMap>(`${ROOT}/recovery`),
+  getRecovery: (): Promise<RecoveryState> =>
+    getJson<RecoveryState>(`${ROOT}/recovery`),
 
   chatStream: (messages: ChatMessage[]): Promise<Response> =>
     postSSE(`${ROOT}/chat`, { messages }),
