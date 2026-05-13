@@ -7,6 +7,8 @@ import type {
   FatSummary,
   GymSession,
 } from '../../../types/prometheus';
+import BurnRateChart from '../BurnRateChart';
+import StepsWidget from '../StepsWidget';
 import CardioForm from './CardioForm';
 import CardioHistory, { type HistoryItem } from './CardioHistory';
 import CardioProfileForm from './CardioProfileForm';
@@ -160,6 +162,11 @@ export default function CardioTab() {
       {lastResult && (
         <CardioResult session={lastResult} onDismiss={() => setLastResult(null)} />
       )}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <StepsWidget />
+        <BurnRateChart />
+      </div>
 
       <div className="grid gap-4 md:[grid-template-columns:220px_1fr]">
         <FatJar summary={summary} />
