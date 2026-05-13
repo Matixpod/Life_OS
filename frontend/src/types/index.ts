@@ -873,3 +873,31 @@ export interface DailyLogPayload {
   energy_score: number;
   notes?: string | null;
 }
+
+// ─── Steps + Settings ─────────────────────────────────────────────────────
+
+/** User-level settings stored on the `users` row (single-user system). */
+export interface UserSettings {
+  weekly_step_goal: number;
+}
+
+/** A single day's persisted step count. */
+export interface StepLog {
+  id: string;
+  date: string; // ISO YYYY-MM-DD
+  steps: number;
+}
+
+/** One entry in the 7-day step view. `null` = no log for that date. */
+export interface StepLogDay {
+  date: string;
+  steps: number | null;
+}
+
+/** One day in the trailing 7-day cardio burn timeline. */
+export interface BurnRateDay {
+  date: string;
+  kcal: number;
+  duration_minutes: number;
+  workout_type: string | null;
+}
