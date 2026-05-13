@@ -228,7 +228,6 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
   };
 
   const validate = (): string | null => {
-    if (!name.trim()) return 'Nazwa treningu jest wymagana';
     if (items.length === 0) return 'Dodaj choć jedno ćwiczenie';
     for (const it of items) {
       if (it.sets.length === 0) return 'Każde ćwiczenie potrzebuje co najmniej jednej serii';
@@ -253,11 +252,12 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
         sets: it.sets,
         muscle_load: it.muscle_load,
       }));
+      const trimmedName = name.trim();
       await prometheusApi.createSession({
         date: todayIso(),
-        label: name.trim(),
+        label: trimmedName,
         exercises: payload,
-        save_as_template: true,
+        save_as_template: trimmedName.length > 0,
         ...(Number(duration) > 0 ? { duration_min: Number(duration) } : {}),
         ...(Number(avgHr) > 0 ? { avg_hr: Number(avgHr) } : {}),
       });
@@ -285,7 +285,10 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
     <div className="rounded-xl border border-border bg-surface p-4 space-y-4">
       <div>
         <label className="block text-[11px] uppercase tracking-widest text-muted mb-1.5">
-          Nazwa treningu <span className="text-accent-red">*</span>
+          Nazwa treningu{' '}
+          <span className="text-muted/70 normal-case tracking-normal">
+            (opcjonalne — zapisuje plan do biblioteki)
+          </span>
         </label>
         <input
           type="text"
@@ -562,11 +565,15 @@ export default function WorkoutBuilder({ onSessionSaved }: WorkoutBuilderProps) 
       <button
         type="button"
         onClick={save}
-        disabled={saving || items.length === 0 || !name.trim()}
+        disabled={saving || items.length === 0}
         className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-accent-orange px-3 py-2 text-sm font-medium text-black disabled:opacity-50"
       >
         {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-        {saving ? 'Zapisuję...' : 'Zapisz trening'}
+        {saving
+          ? 'Zapisuję...'
+          : name.trim().length > 0
+            ? 'Zapisz trening'
+            : 'Zapisz w historii (bez planu)'}
       </button>
     </div>
   );
