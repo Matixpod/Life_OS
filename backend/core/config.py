@@ -64,3 +64,6 @@ TABLE_PROMETHEUS_REPORTS = "prometheus_reports"
 # PROMETHEUS Cardio System (migration 014)
 TABLE_CARDIO_PROFILES = "cardio_profiles"
 TABLE_CARDIO_SESSIONS = "cardio_sessions"
+
+# Steps module (migration 017)
+TABLE_STEP_LOGS = "step_logs"
