@@ -2,7 +2,9 @@ import { Sparkles, Zap } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { dailySystemApi } from '../../api/dailySystem';
+import { api } from '../../services/api';
 import type { DailyLog } from '../../types';
+import { yesterdayIso } from '../../utils/date';
 
 interface DailyBriefingModalProps {
   onComplete: (log: DailyLog) => void;
@@ -55,11 +57,28 @@ export default function DailyBriefingModal({ onComplete }: DailyBriefingModalPro
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
+  const [yesterdayMissing, setYesterdayMissing] = useState<boolean>(false);
+  const [stepsValue, setStepsValue] = useState<number>(0);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = '';
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getStepsYesterday()
+      .then((log) => {
+        if (!cancelled && log === null) setYesterdayMissing(true);
+      })
+      .catch(() => {
+        // Silent — the steps section is non-blocking by design.
+      });
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -79,6 +98,14 @@ export default function DailyBriefingModal({ onComplete }: DailyBriefingModalPro
         sleep_score: sleep,
         energy_score: energy,
       });
+      if (yesterdayMissing && stepsValue > 0) {
+        // Non-blocking — failure here shouldn't keep the modal open.
+        try {
+          await api.logSteps(yesterdayIso(), stepsValue);
+        } catch {
+          /* silent */
+        }
+      }
       setClosing(true);
       // Match the fade-out duration in the wrapper className below.
       window.setTimeout(() => onComplete(log), 220);
@@ -134,6 +161,39 @@ export default function DailyBriefingModal({ onComplete }: DailyBriefingModalPro
             }}
           />
         </div>
+
+        {yesterdayMissing && (
+          <div className="mt-6 border-t border-white/5 pt-4">
+            <p className="text-[10px] uppercase tracking-widest text-white/40">
+              Opcjonalnie
+            </p>
+            <p className="mt-2 flex items-center gap-2 font-sora text-sm text-white/80">
+              🦶 Ile kroków zrobiłeś wczoraj?
+            </p>
+            <div className="mt-3 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setStepsValue((v) => Math.max(0, v - 1000))}
+                className="h-9 w-9 rounded-md border border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
+              >
+                −
+              </button>
+              <div className="w-28 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-center font-mono text-base text-white">
+                {stepsValue.toLocaleString('pl-PL').replace(/,/g, ' ')}
+              </div>
+              <button
+                type="button"
+                onClick={() => setStepsValue((v) => Math.min(50000, v + 1000))}
+                className="h-9 w-9 rounded-md border border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
+              >
+                +
+              </button>
+            </div>
+            <p className="mt-2 text-center text-[10px] text-white/30">
+              Pole opcjonalne — możesz pominąć
+            </p>
+          </div>
+        )}
 
         <div className="mt-8 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 text-center">
           <p className="text-xs uppercase tracking-wider text-amber-400/70">
