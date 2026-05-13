@@ -22,6 +22,7 @@ from routers import (
     proposals,
     review,
     sleep,
+    steps,
     tasks,
     user,
     workout,
@@ -67,3 +68,4 @@ app.include_router(calendar.router, prefix="/api/v1")
 app.include_router(daily_system.router, prefix="/api/v1")
 app.include_router(prometheus.router, prefix="/api/v1")
 app.include_router(workout_templates.router, prefix="/api/v1")
+app.include_router(steps.router, prefix="/api/v1")
