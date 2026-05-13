@@ -494,3 +494,43 @@ class RecoveryStateResponse(BaseModel):
     stamina_pool: int = 0
     recovery_modifier_today: float = 0.5
     computed_at: str
+
+
+# ─── Steps + User Settings ───────────────────────────────────────────────────
+
+
+class StepLog(BaseModel):
+    """A single day's step count for the authenticated user."""
+
+    id: str
+    date: DateType
+    steps: int
+
+
+class StepLogDay(BaseModel):
+    """A weekly-view entry — `steps=None` means no log for that date."""
+
+    date: str  # ISO YYYY-MM-DD
+    steps: int | None
+
+
+class StepLogRequest(BaseModel):
+    date: DateType
+    steps: int = Field(ge=0, le=100000)
+
+
+class BurnRateDay(BaseModel):
+    """One day of the rolling 7-day cardio burn timeline."""
+
+    date: str  # ISO YYYY-MM-DD
+    kcal: int
+    duration_minutes: int
+    workout_type: str | None = None
+
+
+class UserSettings(BaseModel):
+    weekly_step_goal: int = 70000
+
+
+class UserSettingsUpdate(BaseModel):
+    weekly_step_goal: int = Field(ge=1000, le=200000)
