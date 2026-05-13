@@ -31,3 +31,20 @@ export function formatMmSs(totalSeconds: number): string {
   const s = safe % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
+
+/** ISO date for yesterday (local timezone). */
+export function yesterdayIso(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** Polish short weekday label (Pn/Wt/Śr/Czw/Pt/Sb/Nd) for an ISO date. */
+export function shortWeekdayPl(iso: string): string {
+  const labels = ['Nd', 'Pn', 'Wt', 'Śr', 'Czw', 'Pt', 'Sb'];
+  const d = new Date(`${iso}T00:00:00`);
+  return labels[d.getDay()] ?? '';
+}
