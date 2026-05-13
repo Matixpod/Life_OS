@@ -1,4 +1,5 @@
 import type {
+  BurnRateDay,
   CognitiveChallenge,
   CreateProjectPayload,
   CreateTaskPayload,
@@ -17,6 +18,8 @@ import type {
   Project,
   ProjectStatus,
   SleepLogPayload,
+  StepLog,
+  StepLogDay,
   StreakInfo,
   Task,
   TaskCompletionResult,
@@ -24,6 +27,7 @@ import type {
   TaskListFilters,
   TaskUpdatePayload,
   UserProfile,
+  UserSettings,
   WeeklyTaskList,
   WorkoutCompleteMeta,
 } from '../types';
@@ -203,4 +207,28 @@ export const api = {
   uncompleteTaskV2: (id: string) =>
     postJson<Task>(`/api/v1/tasks/${id}/uncomplete`, {}),
   skipTaskV2: (id: string) => postJson<Task>(`/api/v1/tasks/${id}/skip`, {}),
+
+  // ─── Steps & settings ──────────────────────────────────────────────────
+  /** Today's step log, or `null` if not yet logged. */
+  getStepsToday: () => getJson<StepLog | null>('/api/v1/steps/today'),
+
+  /** Yesterday's step log, or `null` (used by the morning briefing). */
+  getStepsYesterday: () => getJson<StepLog | null>('/api/v1/steps/yesterday'),
+
+  /** Current ISO week (Mon–Sun) — always 7 entries, `null` for empty days. */
+  getStepsWeek: () => getJson<StepLogDay[]>('/api/v1/steps/week'),
+
+  /** Upsert the step count for a date. */
+  logSteps: (date: string, steps: number) =>
+    postJson<StepLog>('/api/v1/steps/log', { date, steps }),
+
+  /** Last 7 calendar days of cardio kcal — always 7 entries, `0` for rest days. */
+  getBurnRate: () => getJson<BurnRateDay[]>('/api/v1/steps/burn-rate'),
+
+  /** User-level settings (currently just the weekly step goal). */
+  getUserSettings: () => getJson<UserSettings>('/api/v1/user/settings'),
+
+  /** Update user-level settings; backend validates the range. */
+  updateUserSettings: (payload: Partial<UserSettings>) =>
+    patchJson<UserSettings>('/api/v1/user/settings', payload),
 };
