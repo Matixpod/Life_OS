@@ -1,0 +1,339 @@
+ ▐▛███▜▌   Claude Code v2.1.136
+▝▜█████▛▘  Opus 4.7 · Claude Pro
+  ▘▘ ▝▝    ~/GITHUB/Life_OS
+
+❯ /plan Chce rozwinąć aktualną sekcje siłowni (prometheus) o zapisywanie        
+treningów oraz przegladanie ich w bibliotece. Gdy trening jest zakończony ma    
+być opcja zapisz trening wymagana jest nazwa treningu.  Zapisane treningi mozna 
+ przegladac i edytowac w bibliotece. Zapisane treningi mozna planować w         
+kalendarzu oraz można je wybrać jako trening na dzis. kg i powtorzenia sa       
+wyswietlane z ostatniego wykonywania danego cwiczenia a ja ewentualnie je       
+zmieniam.                                                                       
+  ⎿  Enabled plan mode
+
+● Bash(find /home/matixpod/GITHUB/Life_OS -type d -name "prometheus"
+      2>/dev/null; find /home/matixpod/GITHUB/Life_OS -type f -name "*.py" |
+      xargs grep -l -i "prometheu…)
+  ⎿  /home/matixpod/GITHUB/Life_OS/backend/agents/prometheus
+     /home/matixpod/GITHUB/Life_OS/frontend/src/components/prometheus
+     /home/matixpod/GITHUB/Life_OS/mcp/lifeos_mcp.py
+     … +19 lines (ctrl+o to expand)
+
+● 3 Explore agents finished (ctrl+o to expand)
+   ├ Explore Prometheus backend · 19 tool uses · 53.3k tokens
+   │ ⎿  Done
+   ├ Explore Prometheus frontend · 24 tool uses · 62.6k tokens
+   │ ⎿  Done
+   └ Explore daily_tasks scheduling · 25 tool uses · 48.2k tokens
+     ⎿  Done
+
+● I have strong understanding now. Let me verify a few key files before
+  finalizing the design.
+
+  Read 3 files (ctrl+o to expand)
+
+● I have a clear picture. The current "template" system uses session labels as
+  ad-hoc templates — fragile and surfaced via window.prompt. Before finalizing
+  the plan, I need to clarify a few design choices.
+
+● User answered Claude's questions:
+  ⎿  · What does 'Save workout' actually save? When you click 'Save' after 
+     finishing today's session, what should it create? → Both session + template
+     · What does the template store about each exercise? → Exercise list + set 
+     count
+     · Where does calendar planning happen? → Inline date picker in library
+     · How should daily_tasks link to templates? → Add workout_template_id FK
+
+● Now I'll write the final plan to the plan file.
+
+● Updated plan
+  ⎿  /plan to preview
+
+● User approved Claude's plan
+  ⎿  Plan saved to: ~/.claude/plans/melodic-moseying-cosmos.md · /plan to edit
+     PROMETHEUS — Workout Templates, Library & Calendar Planning
+
+     Context
+
+     Today, PROMETHEUS persists workouts as prometheus_sessions rows whose label
+      doubles as an ad-hoc "template name". Reusing a workout means cloning the
+     most recent session that happens to share the same label
+     (task_service._auto_create_session_from_label). The UX is rough: the
+     workout name is auto-derived ("Bench press + Squat +3"), the only way to
+     schedule a workout into the future is window.prompt for a date in
+     WorkoutLog, and there is no first-class concept of a saved/reusable
+     workout. The user's mental model — I finish a workout, save it under a 
+     name, reuse it later, plan it on the calendar — is not represented in the
+     schema.
+
+     This plan introduces workout templates as a first-class entity, with a
+     library UI, inline calendar planning, "load saved workout for today", and a
+      required name on save. Per-exercise kg/reps continue to come from the last
+      performance of that exercise (existing getLastSets endpoint), so
+     progressive overload still works automatically.
+
+     Decisions (confirmed with user):
+     1. "Save" creates both a session record (history) and upserts a template by
+      name.
+     2. Templates store exercise order + target set count only — kg/reps come
+     from last performance at load time.
+     3. Calendar planning happens via an inline date picker in the library.
+     4. daily_tasks gets a new workout_template_id UUID FK (label column kept
+     for back-compat).
+
+     Backend changes
+
+     1. New migration — migrations/016_workout_templates.sql
+
+     - workout_templates (id UUID PK, user_id FK, name TEXT, created_at,
+     updated_at); UNIQUE (user_id, lower(name)).
+     - workout_template_exercises (id UUID PK, template_id FK ON DELETE CASCADE,
+      exercise_name TEXT, order_index INT, target_sets INT DEFAULT 3,
+     muscle_load JSONB).
+     - ALTER TABLE daily_tasks ADD COLUMN workout_template_id UUID REFERENCES 
+     workout_templates(id) ON DELETE SET NULL.
+     - RLS enabled on both new tables, user_id = auth.uid() policy per ADR-011.
+     - Indexes: (user_id) on templates, (template_id, order_index) on template
+     exercises, (workout_template_id) on daily_tasks.
+
+     2. Models — backend/models/schemas.py
+
+     - Add WorkoutTemplateExerciseInput, WorkoutTemplateCreate,
+     WorkoutTemplateUpdate, WorkoutTemplate, WorkoutTemplateExercise Pydantic
+     models.
+     - SessionCreate (already exists at ~line 248): the existing label: str
+     field becomes the template name. Add an optional save_as_template: bool = 
+     True so ad-hoc sessions can opt out.
+
+     3. New service — backend/services/workout_template_service.py
+
+     - list_templates(supabase) -> list[WorkoutTemplate] — with eager-loaded
+     exercises.
+     - get_template(supabase, id) -> WorkoutTemplate.
+     - upsert_template(supabase, name, exercises) -> WorkoutTemplate — find by
+     (user_id, lower(name)); if exists, replace exercises and bump updated_at;
+     else create.
+     - update_template(supabase, id, payload) — supports rename, reorder,
+     add/remove/change target_sets.
+     - delete_template(supabase, id).
+     - schedule_template(supabase, template_id, dates: list[date]) — for each
+     date, upserts a daily_tasks row with task_type='workout',
+     workout_template_id=..., workout_template_label=name, title=name,
+     category='health', estimated_minutes=60.
+
+     4. Modify backend/services/prometheus_service.py
+
+     - create_session() (lines 125–247): after the session insert succeeds and
+     before kcal analysis, call workout_template_service.upsert_template(...)
+     when payload.save_as_template is true and payload.label is non-empty. Build
+      template exercises from [{exercise_name, order_index, 
+     target_sets=len(sets), muscle_load}]. Failures here must not break session
+     creation — wrap in try/except, log only.
+
+     5. Modify backend/services/task_service.py _auto_create_session_from_label 
+     (lines 308–394)
+
+     - New resolution order: if the daily_task has workout_template_id set,
+     fetch exercises from workout_template_exercises and for each call
+     prometheus_service.get_last_sets_for_exercise(name) to populate sets (fall
+     back to empty sets if exercise was never performed). Otherwise fall back to
+      existing label-based session lookup.
+     - Keep silent-failure semantics.
+
+     6. New router — backend/routers/workout_templates.py
+
+     Routes (mounted under /api/v1/workout-templates in backend/main.py):
+     - GET / → list
+     - GET /{id} → detail with exercises + last_sets per exercise (one DB
+     roundtrip per exercise via existing get_last_sets_for_exercise)
+     - POST / → create
+     - PATCH /{id} → update (rename / reorder / target_sets)
+     - DELETE /{id}
+     - POST /{id}/schedule body { dates: ["YYYY-MM-DD", ...] } → bulk-create
+     daily_tasks
+     - POST /{id}/start-today → upsert today's daily_task pointing at this
+     template; returns the task
+
+     Frontend changes
+
+     7. Types — frontend/src/types/prometheus.ts
+
+     Add:
+     export interface WorkoutTemplateExercise {
+       id: string;
+       exercise_name: string;
+       order_index: number;
+       target_sets: number;
+       muscle_load: RecoveryMap;
+       last_sets?: ExerciseSet[];   // populated by GET /{id}
+     }
+     export interface WorkoutTemplate {
+       id: string;
+       name: string;
+       exercises: WorkoutTemplateExercise[];
+       created_at: string;
+       updated_at: string;
+     }
+
+     8. API client — frontend/src/api/prometheus.ts
+
+     Add workoutTemplatesApi with: list, get, create, update, remove,
+     schedule(id, dates), startToday(id).
+
+     9. Modify frontend/src/components/prometheus/WorkoutBuilder.tsx
+
+     - Replace deriveLabel(items) (lines 31–36) with a required name input at
+     the top (<input> for "Nazwa treningu" — placeholder "np. Push A").
+     - Validation in validate() (line 111): block save if name empty or
+     whitespace.
+     - save() (line 122) sends label = name.trim(); backend handles template
+     upsert.
+     - Add a "Załaduj zapisany trening" dropdown/select above the search box
+     (uses workoutTemplatesApi.list()). Selecting a template calls
+     workoutTemplatesApi.get(id) and populates items with each exercise
+     pre-filled with last_sets (or empty rows × target_sets if no history). Sets
+      the name input to the template's name.
+
+     10. New component — 
+     frontend/src/components/prometheus/WorkoutTemplatesLibrary.tsx
+
+     List view (card per template):
+     - Name, exercise count, "ostatnio wykonane" date (from latest session with
+     same label)
+     - Top-3 muscle groups (aggregated from muscle_load like ExerciseLibrary
+     does)
+     - Actions: Start today, Plan w kalendarzu (opens inline popover), Edytuj
+     (opens modal), Usuń
+     - Search input (live filter by name)
+
+     Inline calendar popover (new small component TemplateSchedulePopover.tsx):
+     - Compact month grid (reuse Tailwind tokens; lucide Calendar,
+     ChevronLeft/Right)
+     - Multi-select dates (toggleable cells)
+     - "Zaplanuj X dni" button → workoutTemplatesApi.schedule(id, dates)
+     - Closes on success; toasts via existing error-banner pattern
+
+     Edit modal (TemplateEditModal.tsx, mirror of SessionEditModal.tsx):
+     - Rename, drag-reorder exercises, change target_sets, add/remove exercises
+     (reuse WorkoutBuilder's search behaviour).
+
+     11. Modify frontend/src/components/prometheus/PrometheusPage.tsx
+
+     - Add a new tab "Plany" (or "Treningi") between "Trening" and "Tygodnik".
+     Renders WorkoutTemplatesLibrary.
+     - Keep existing "Biblioteka" tab (exercise library) — different concept.
+
+     12. Modify frontend/src/components/prometheus/WorkoutLog.tsx
+
+     - Remove the schedule() window.prompt flow (lines 48–77) and the
+     CalendarPlus icon row in SessionRow (lines 191–198). Planning now lives in
+     the templates library where it belongs. Editing past sessions stays.
+
+     Critical files to modify (summary)
+
+     ┌───────┬───────────────────────────────────────────────┬────────────────┐
+     │ Layer │                     File                      │     Change     │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ DB    │ migrations/016_workout_templates.sql          │ NEW — tables,  │
+     │       │                                               │ FK, RLS        │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │       │                                               │ Add 5 Pydantic │
+     │ Backe │ backend/models/schemas.py                     │  models, save_ │
+     │ nd    │                                               │ as_template    │
+     │       │                                               │ flag           │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Backe │ backend/services/workout_template_service.py  │ NEW            │
+     │ nd    │                                               │                │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │       │                                               │ Upsert         │
+     │ Backe │ backend/services/prometheus_service.py (~line │ template after │
+     │ nd    │  125)                                         │  session       │
+     │       │                                               │ insert         │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Backe │                                               │ Resolve via    │
+     │ nd    │ backend/services/task_service.py (line 308)   │ workout_templa │
+     │       │                                               │ te_id first    │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Backe │ backend/routers/workout_templates.py          │ NEW            │
+     │ nd    │                                               │                │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Backe │ backend/main.py                               │ Mount router   │
+     │ nd    │                                               │                │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Front │ frontend/src/types/prometheus.ts              │ Add template   │
+     │ end   │                                               │ types          │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Front │ frontend/src/api/prometheus.ts                │ Add workoutTem │
+     │ end   │                                               │ platesApi      │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │       │                                               │ Required name  │
+     │ Front │ frontend/src/components/prometheus/WorkoutBui │ input +        │
+     │ end   │ lder.tsx                                      │ load-template  │
+     │       │                                               │ dropdown       │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Front │ frontend/src/components/prometheus/WorkoutTem │ NEW            │
+     │ end   │ platesLibrary.tsx                             │                │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Front │ frontend/src/components/prometheus/TemplateSc │ NEW            │
+     │ end   │ hedulePopover.tsx                             │                │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Front │ frontend/src/components/prometheus/TemplateEd │ NEW            │
+     │ end   │ itModal.tsx                                   │                │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Front │ frontend/src/components/prometheus/Prometheus │ New "Plany"    │
+     │ end   │ Page.tsx                                      │ tab            │
+     ├───────┼───────────────────────────────────────────────┼────────────────┤
+     │ Front │ frontend/src/components/prometheus/WorkoutLog │ Remove         │
+     │ end   │ .tsx                                          │ window.prompt  │
+     │       │                                               │ schedule       │
+     └───────┴───────────────────────────────────────────────┴────────────────┘
+
+     Reuse notes
+
+     - prometheus_service.get_last_sets_for_exercise() (lines 63–119) — reuse
+     for last-performed kg/reps both at template-load time and inside
+     _auto_create_session_from_label.
+     - SetEditor.tsx (83 lines) — reuse unchanged inside template-edit modal and
+      the load-template flow.
+     - Existing exercise-library search pattern (ExerciseLibrary.tsx lines
+     1–199) — mirror its filter UX inside WorkoutTemplatesLibrary.
+     - tasksApi.createTask already accepts task_type='workout' and
+     workout_template_label — extend to also pass workout_template_id once the
+     field exists.
+
+     Verification
+
+     1. Migration — apply 016_workout_templates.sql in Supabase Dashboard.
+     Verify tables, FK, RLS policies via the SQL editor (select * from 
+     pg_policies where tablename like 'workout_template%').
+     2. Backend smoke — cd backend && source .venv/bin/activate && uvicorn 
+     main:app --reload --port 8000, then:
+       - curl localhost:8000/api/v1/workout-templates → []
+       - Create a session through the UI → curl 
+     localhost:8000/api/v1/workout-templates returns the new template.
+     3. Type check — cd frontend && pnpm tsc --noEmit and cd backend && ruff 
+     check ..
+     4. End-to-end via Playwright MCP (per CLAUDE.md visual testing workflow):
+       - Open localhost:5173/workout
+       - Build a workout in "Trening" tab, type name "Push A", save → screenshot
+      the success state.
+       - Switch to "Plany" tab → see "Push A" card → screenshot.
+       - Click "Plan w kalendarzu" → pick 2 future dates → confirm → switch to
+     /calendar and verify the workouts appear.
+       - Click "Start today" on a template → return to "Trening" tab → verify
+     items pre-populated with last-performed sets.
+       - Edit template (rename, reorder, change target_sets) → save → verify
+     changes round-trip.
+       - Delete a template → confirm related daily_tasks have
+     workout_template_id set to NULL (FK ON DELETE SET NULL), label retained.
+     5. Mobile — resize viewport to 375px, screenshot the templates library and
+     the schedule popover.
+     6. Regression — verify the existing kcal analysis still runs
+     (duration_min/avg_hr fields on save), WorkoutLog still shows sessions,
+     recovery heatmap still computes.
+● Plan approved. The task list is queued. Want me to start executing — beginning
+   with the SQL migration — or pause here so you can review/apply the migration
+  in Supabase yourself first (since migrations require manual SQL Editor
+  application per ADR-011)?
+
+✻ Baked for 4m 34s
